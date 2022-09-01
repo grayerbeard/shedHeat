@@ -32,6 +32,13 @@
 
 # Then used the wizard to get access keys:
 
+# Standard library imports
+from time import sleep as time_sleep
+from os import path
+import datetime
+from sys import exit as sys_exit
+from subprocess import call
+
 """pi@RPi3-tankTemp:~/switch $ python3 -m tinytuya wizard 
 TinyTuya Setup Wizard [1.6.6]
 
@@ -88,37 +95,58 @@ Device Listing
         "mac": "cc:8c:bf:56:fa:b5"
     }
 ]
-  """
+
+
 
     # Example Usage of TinyTuya
 import tinytuya
-""
+"""
         "name": "SWITCH01",
         "id": "bf5723e4b65de4a64fteqz",
         "key": "4eb0c6992391377a",
         "mac": "cc:8c:bf:56:fa:b5"
-""
-d = tinytuya.OutletDevice('bf5723e4b65de4a64fteqz', '192.168.10.101', '4eb0c6992391377a')
-d.set_version(3.4)
-data = d.status() 
-print('Device switch01  status: %r' % data)
+"""
+d = tinytuya.OutletDevice('bf5723e4b65de4a64fteqz', '192.168.100.154', '4eb0c6992391377a')
+d.set_version(3.3)
+#data = d.status() 
+#print('Device switch01  status: %r' % data)
 
-""        "name": "SWITCH02",
+nowait = True
+
+#d.set_status(on, switch=1, nowait)
+print("try on")
+d.turn_on(switch=1, nowait=False)
+print("done try on")
+time_sleep(10)
+print("try off")
+#d.set_status(off, switch=1, nowait)
+d.turn_on(switch=1, nowait=False)
+print("done try off")
+
+
+sys_exit()
+time_sleep(3) 
+
+"""
+        "name": "SWITCH02",
         "id": "bf0e00da7f4df8c38dxvqu",
         "key": "1a1a9ce5e6e6ebac",
-        "mac": "cc:8c:bf:57:48:f1"""
+        "mac": "cc:8c:bf:57:48:f1
+"""
 
-d = tinytuya.OutletDevice('bf0e00da7f4df8c38dxvqu', '192.168.10.165', '1a1a9ce5e6e6ebac')
+d = tinytuya.OutletDevice('bf0e00da7f4df8c38dxvqu', '192.168.100.165', '1a1a9ce5e6e6ebac')
 d.set_version(3.4)
 data = d.status() 
 print('Device switch02  status: %r' % data)
 
-""        "name": "SWITCH03",
+"""
+        "name": "SWITCH03",
         "id": "bfae7fdb0b0c3c03522yoo",
         "key": "d196c29513b77291",
-        "mac": "cc:8c:bf:57:27:c6"""
+        "mac": "cc:8c:bf:57:27:c6
+"""
 
-d = tinytuya.OutletDevice('bfae7fdb0b0c3c03522yoo', '192.168.10.122', 'd196c29513b77291')
+d = tinytuya.OutletDevice('bfae7fdb0b0c3c03522yoo', '192.168.100.122', 'd196c29513b77291')
 d.set_version(3.4)
 data = d.status() 
 print('Device switch03  status: %r' % data)
