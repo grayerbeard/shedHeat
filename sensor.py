@@ -32,65 +32,64 @@ from w1thermsensor import W1ThermSensor, Sensor
 from utility import fileexists
 from sensorConfig import class_sensorConfig
 from time import sleep as time_sleep
+from datetime import datetime
 
-
-class class_my_sensors:
-	def __init__(self,idsToUse):
-		sensorConfig = class_sensorConfig()
-		#Set up Config file and read it in if present
-		sensorConfig = class_sensorConfig(logTime)
-	if fileexists(config.config_filename):		
-		print( "will try to read Config File : " ,config.config_filename)
-		config.read_file() # overwrites from file
-	else : # no file so file needs to be writen
-		config.write_file()
-		print("New Config File Made with default values, you probably need to edit it")
-		self.sensorConfig = 
-		self.failDefault = -100
-		self.lastReading = [self.failDefault]*len(idsToUse)
-		self.idsToUse = idsToUse
+class class_sensors:
+	def __init__(self):
+		# Get Sensor codes from sensorConfig.cfg or set up empty variable and default values
+		self.sensorConfig = class_sensorConfig()
+		self.lastTemperatures = [self.sensorConfig.failDefault]*len(self.sensorConfig.cfgIds)
+		self.temperatures = [self.sensorConfig.failDefault]*len(self.sensorConfig.cfgIds)
 	def get_temp(self):
-		tempsFromSensors = []
 		sensorID = []
-		fails = []
-		newCode = []
-		readings = [-1]*len(self.idsToUse)
-		# gets the temperature of the sensor for readings	
+		tempsFromSensors = []
+		self.temperatures = [self.sensorConfig.failDefault]*len(self.sensorConfig.cfgIds)
 		sensors = W1ThermSensor.get_available_sensors()
-		#print("Found Sensors : ",setemps.append(temp)nsors)
 		for sensor in W1ThermSensor.get_available_sensors([Sensor.DS18B20]):
 			#get data
-			try:
-				sensor.id, sensor.get_temperature()
-				sensorGet = W1ThermSensor(Sensor.DS18B20, sensor.id)
-				temp = sensorGet.get_temperature()
-				tempsFromSensors.append(temp)
-				sensorID.append(sensor.id)
-			except:
-				fails.append(sensor.id)
-			found = len(sensorID)
-			#print(found)
-			#print(sensorID[found-1])
-			if found > 0:
-				print("sensor : ",found,"   SensorID : ",sensorID[found-1]," Temp : ",tempsFromSensors[found-1])
-		for code in self.idsToUse:
+			sensor.id, sensor.get_temperature()
+			sensorGet = W1ThermSensor(Sensor.DS18B20, sensor.id)
+			temp = sensorGet.get_temperature()
+			tempsFromSensors.append(temp)
+			sensorID.append(sensor.id)
+
+		#scan the ids expected against those found
+		for code in self.sensorConfig.cfgIds:
+			foundIndex = sensorID.index(code) # position of cfg file code in list of found codes
 			if code in sensorID:
-				index = sensorID.index(code)
-				temp = tempsFromSensors[index]	
-				print("found : ",code, " at ", index," with value : ",temp)
-				readings[index] = temp
-				self.lastReading[index] = temp
-			elif self.lastReading(index) ==  self.failDefault :
-				print(code, " never found")
+				#we found a code in cfg amongst read in values
+				#find this codes position in our cfg list
+				cfgIndex = self.sensorConfig.cfgIds.index(code)
+				temp = tempsFromSensors[foundIndex]	# the temperature of that sensor
+				self.temperatures[foundIndex] = temp # store in output list
+				self.lastTemperatures[foundIndex] = temp # store in last values list
 			else:
-				print(code, "  not found this time")
-				readings[index] = round(self.lastReading[index]) + 0.12345
+				#The cfg held code was NOT found in connected codes
+				cfgIndex = self.sensorConfig.cfgIds.index(code)
+				print(cfgIndex,code, "  not found this time")
+				if self.lastTemperatures[cfgIndex] == self.sensorConfig.failsDefault:
+					print(cfgIndex,code, "  never found")
+					self.temperatures[cfgIndex] = self.lastTemperatures[cfgIndex]
+				else:
+					# it was found during this session, 
+					self.temperatures[cfgIndex],self.lastTemperatures[cfgIndex] = \
+						round(self.lastTemperatures[cfgIndex]) + 0.12345
 		for code in sensorID:
-			if code in self.idsToUse:
-				print("This code : ",code,"  was found")
+			foundIndex = sensorID.index(code)
+			if code in self.sensorConfig.cfgIds:
+				cfgIdsIndex = self.sensorConfig.cfgIds.index(code)
+				print("This existing code : ",cfgIdsIndex,code,"  was found")
+				# no additional action needed we have already stoored the temperature in "temperatures" list.
 			else:
-				newCode.append(code)
-		return fails,found,sensorID, tempsFromSensors
+				#this is a new code and must be added to the list
+				cfgIndex = len(self.sensorConfig.cfgIds) + 1 # one more than was there before
+				self.sensorConfig.newConfigFileNeeded = True
+				self.sensorConfig.cfgIds.append(code)
+				self.temperatures.append(tempsFromSensors[foundIndex])
+				self.lastTemperatures.append(tempsFromSensors[foundIndex])
+		if self.sensorConfig.newConfigFileNeeded:
+			self.sensorConfig.write_file()
+		return self.temperatures
 
 if __name__ == '__main__':
 
@@ -104,18 +103,19 @@ if __name__ == '__main__':
 	#else : # no file so file needs to be writen
 	#	config.write_file()
 	#	print("New Config File Made with default values, you probably need to edit it")
-	idsToUse=('0316062c0fff', '0316064402ff', '0315a80584ff')
-	sensor = class_my_sensors(idsToUse)
+	sensor = class_sensors()
 	print("Sensor Class set up")
 	print("\n")
-	
-	limit = 0	
+	lastTime = datetime.now()
+	limit = 0
 	count = 0
 	while (count<limit) or (limit == 0):
-		fails,found,sensorID, tempsFromSensors = sensor.get_temp()
-		for ind in range(found):
-			print(ind+1,sensorID[ind],tempsFromSensors[ind])
-		print (sensorID)
-		print (tempsFromSensors)
+		temperatures = sensor.get_temp()
+		thisTime = datetime.now()
+		cycleTime = round((thisTime - lastTime).total_seconds(),2)
+		lastTime = thisTime
+		for index in range(len(sensor.sensorConfig.cfgIds)):
+			print(count,cycleTime,index+1,sensor.sensorConfig.cfgIds[index],temperatures[index])
+		print ("\n")
 		count+=1
 

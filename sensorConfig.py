@@ -35,22 +35,27 @@ from utility import fileexists
 class class_sensorConfig:
 	def __init__(self):
 		self.sensorConfig_filename = "sensorConfig.cfg"
-		self.idsToUse = []
+		self.cfgIds = []
+		self.failDefault = -100
 		#Set up Config file and read it in if present
 		if fileexists(self.sensorConfig_filename):		
 			print( "will try to read sensorConfig File : " ,self.sensorConfig_filename)
 			config_read = RawConfigParser()
 			config_read.read(self.sensorConfig_filename)
-			self.sensorConfigFileExists = True
+			self.newConfigFileNeeded = False
 			section = "Codes"
-			self.idsToUse =  config_read.get(section, 'tempSensorCodes').split(",")
+			self.cfgIds =  config_read.get(section, 'tempSensorCodes').split(",")
+			self.failDefault = float(config_read.get(section, 'failDefault'))
+		else:
+			self.newConfigFileNeeded = True
 
 	def write_file(self):
 		config_write = RawConfigParser()
 		section = "Codes"
 		config_write.add_section(section)
-		idsToUseAsString  =",".join(map(str,self.idsToUse))
-		config_write.set(section, 'tempSensorCodes',idsToUseAsString)
+		cfgIdsAsString  =",".join(map(str,self.cfgIds))
+		config_write.set(section, 'tempSensorCodes',cfgIdsAsString)
+		config_write.set(section, 'failDefault',self.failDefault)
 		# Writing our configuration file to 'self.config_filename'
 		with open(self.sensorConfig_filename, 'w+') as configfile:
 			config_write.write(configfile)
@@ -59,12 +64,12 @@ class class_sensorConfig:
 if __name__ == '__main__':
 	sensorConfig = class_sensorConfig()
 	
-	print ("Sensor IDs to use in file are : ",sensorConfig.idsToUse)
+	print ("Sensor IDs to use in file are : ",sensorConfig.cfgIds)
 	#add additional values as test
-	sensorConfig.idsToUse.append("testvalueone")
-	sensorConfig.idsToUse.append("testvalueTwo")
+	sensorConfig.cfgIds.append("testvalueone")
+	sensorConfig.cfgIds.append("testvalueTwo")
 	sensorConfig.write_file()
-	print ("Sensor IDs sent to file are : ",sensorConfig.idsToUse)
+	print ("Sensor IDs sent to file are : ",sensorConfig.cfgIds)
 	sensorConfig = class_sensorConfig()
-	print ("Sensor IDs to use in file are : ",sensorConfig.idsToUse)
+	print ("Sensor IDs to use in file are : ",sensorConfig.cfgIds)
 	
