@@ -55,8 +55,13 @@ class class_sensors:
 
 		#scan the ids expected against those found
 		for code in self.sensorConfig.cfgIds:
-			foundIndex = sensorID.index(code) # position of cfg file code in list of found codes
-			if code in sensorID:
+			try:
+				foundIndex = sensorID.index(code) # position of cfg file code in list of found codes
+				found = True
+			except:
+				# the cfg Id was not found
+				found = False
+			if (code in sensorID) and found:
 				#we found a code in cfg amongst read in values
 				#find this codes position in our cfg list
 				cfgIndex = self.sensorConfig.cfgIds.index(code)
@@ -67,7 +72,7 @@ class class_sensors:
 				#The cfg held code was NOT found in connected codes
 				cfgIndex = self.sensorConfig.cfgIds.index(code)
 				print(cfgIndex,code, "  not found this time")
-				if self.lastTemperatures[cfgIndex] == self.sensorConfig.failsDefault:
+				if self.lastTemperatures[cfgIndex] == self.sensorConfig.failDefault:
 					print(cfgIndex,code, "  never found")
 					self.temperatures[cfgIndex] = self.lastTemperatures[cfgIndex]
 				else:
