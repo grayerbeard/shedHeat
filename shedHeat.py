@@ -37,6 +37,7 @@ from text_buffer import class_text_buffer
 from utility import fileexists,pr,make_time_text
 # Note use of sensor_test possible on next line
 from sensor import class_sensors
+from tuyaCloud import class_tuyaCloud
 
 #Set up Config file and read it in if present
 config = class_config()
@@ -59,19 +60,19 @@ print ("6",config.program6)
 program = [[0] for i in range(7)]
 
 for item in config.program0:
-	program[0].append(int(item))
+	program[0].append(float(item))
 for item in config.program1:
-	program[1].append(int(item))
+	program[1].append(float(item))
 for item in config.program2:
-	program[2].append(int(item))
+	program[2].append(float(item))
 for item in config.program3:
-	program[3].append(int(item))
+	program[3].append(float(item))
 for item in config.program4:
-	program[4].append(int(item))
+	program[4].append(float(item))
 for item in config.program5:
-	program[5].append(int(item))
+	program[5].append(float(item))
 for item in config.program6:
-	program[6].append(int(item))	
+	program[6].append(float(item))	
 print (program)
 		
 	
@@ -84,7 +85,7 @@ onTime = 0
 offTime = 0
 
 logType = "log"
-headings = ["Hour in Day"," Room Temp","Per 10 Mins","Predicted Temp","Target Temp","Other Temp1","OtherTemp2","heaters Status",\
+headings = ["Hour in Day"," Room Temp","Per 10 Mins","Predicted Temp","Target Temp","Heat Pmp Out","OutDoor","heaters Status",\
 	"offTime","onTime","Reason","Message"]
 logBuffer = class_text_buffer(headings,config,logType,logTime)
 
@@ -103,8 +104,18 @@ else:
 	refresh_time = 2*config.scan_delay
 
 print("at Start up Turn heaters Off")
-heaterOn, successfulResult = cloud.operateSwitch(config.switchId,"switch_1",False)
-print("At start pump status :  ",pumpOn)
+heatersOn, successfullResult = cloud.operateSwitch(config.switchId,"switch_1",False)
+if successfullResult:
+	print("Heater Switch Working")
+else:
+	print("Heater Operation Fail")
+	#id = "bf5723e4b65de4a64fteqz"
+	#heatersOn, successfullResult = cloud.operateSwitch(id,"switch_1",False)
+	#if successfullResult:
+	#	print("Heater Switch Working")
+	#else:
+	#	print("Heater Operation Fail")
+	sys_exit()
 
 startHold = True
 lastHoldMin = logTime.minute 
@@ -113,11 +124,15 @@ targetTemp = 0
 programTemp = 0
 increment = True
 changeRate = 0
-lastTemp,tries,getTheTempError = sensor.getTheTemp()
+#lastTemp,tries = sensor.getTemp()
+lastTemp = 0
+getTheTempError = False
 lastLogTime = logTime
 predictedTemp = 0
 overRun = False
 overRunLogCount = 0
+tries = 0  # NOT being set at the moment
+sensor.errorCount = 0 # NOT being set at the moment
 
 #tempMeasureErrorCount = 0
 #maxTries = 0
@@ -145,7 +160,7 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 		logTime= datetime.now()
 		dayInWeek = logTime.weekday()
 		hourInDay = logTime.hour + (logTime.minute/60)
-		dayTime = config.day_start <= hourInDay <= config.night_start
+#		dayTime = config.day_start <= hourInDay <= config.night_start
 		
 		numValues = len(program[dayInWeek])
 		ind = 0
@@ -168,12 +183,16 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			targetTemp -= config.hysteresis
 		
 		# Do Control
-		temperatures = sensor.get_temp()
+		temperatures = sensor.getTemp()
 		temp = temperatures[config.sensor4readings]
 
 		if temp < 0 : # Nor Sensor Connected
 			print("no Senso connected will turn heaters Off")
-			heaterOn, successfulResult = cloud.operateSwitch(config.switchId,"switch_1",False)
+			heatersOn, successfullResult = cloud.operateSwitch(config.switchId,"switch_1",False)
+			if not(successfullResult):
+				print("Heater Operation Fail")
+				message = message + " Htr Op Fail"
+				increment = True
 			sys_exit()
 		else:
 			tempChange = temp - lastTemp
@@ -197,19 +216,24 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 					reason = reason + "heaters Off,"
 
 					message = message + " heaters Turned OFF"
-				heaterOn, successfulResult = cloud.operateSwitch(config.switchId,"switch_1",False)
+				heatersOn, successfullResult = cloud.operateSwitch(config.switchId,"switch_1",False)
+				if not(successfullResult):
+					increment = True
+					reason = reason + " Heater turn off Fault, "
+					print("Heater Operation Fail")
 			else:
 				if not heatersOn : # This is a change from OFF to ON
 					#print("Temp < Target so turn heaters ON")
 					heatersTurnOnTime = logTime
-					pumpOverRunStartTime = logTime
 					onTime = (heatersTurnOnTime - heatersTurnOffTime).total_seconds() / 60.0
-					
 					increment = True
 					reason = reason + "heatersON"
-					
-					message = message + "heaters Turned and Pump ON"
-				heaterOn, successfulResult = cloud.operateSwitch(config.switchId,"switch_1",True)
+					message = message + "heaters Turned"
+				heatersOn, successfullResult = cloud.operateSwitch(config.switchId,"switch_1",True)
+				if not(successfullResult):
+					increment = True
+					reason = reason + " Heater turn on Fault, "
+					print("Heater Operation Fail")
 
 		# Do Logging
 		#" Room Temp","Target Temp","heaters Status","Message"]
@@ -237,24 +261,27 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			lastLogTime = logTime
 			
 			increment = True
-			reason = reason + "aMustLog,"
+			reason = reason + " MustLog, "
 			
-		if (config.scan_count < 5) or (tries > 0) or (sensor.errorCount > 0) or getTheTempError:
+		if (config.scan_count < 5) or (tries > 0) or (sensor.errorCount > 0): #or getTheTempError:
 			
 			increment = True
 			if (config.scan_count < 5):
 				reason = reason + "start,"
-			if (tries > 0):
-				reason = reason + "tries,"
-			if (sensor.errorCount > 0):
-				reason = reason + "errors,"
-			if getTheTempError:
-				reason = reason + "temperror,"
+#			if (tries > 0):
+#				reason = reason + "tries,"
+#			if (sensor.errorCount > 0):
+#				reason = reason + "errors,"
+#			if getTheTempError:
+#				reason = reason + "temperror,"
 
 		logBuffer.line_values["Reason"]  = reason
 		logBuffer.line_values["Message"]  = message
 
+		print("count : ",config.scan_count," Increment : ",increment)
+
 		logBuffer.pr(increment,0,logTime,refresh_time)
+		print("\n")
 		increment = False
 		reason = ""
 		message = ""
@@ -271,17 +298,15 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			try:
 				time_sleep(sleep_time)
 			except KeyboardInterrupt:
-				print(".........Ctrl+C pressed... Output Off")
-				if heatersOn or pumpOn:
-					heatersOn = relay.relayOFF(config.heatersRelayNumber)
-					pumpOn = relay.relayON(config.pumpRelayNumber)
-					print("Running Pump for 60 seconds because heaters was on")
-					time_sleep(60) 
+				print(".........Ctrl+C pressed... Output Off 288")
+				print("Switching off heaters")
+				heatersOn, successfullResult = cloud.operateSwitch(config.switchId,"switch_1",False)
+				if successfullResult:
+					print("Heater Operation OK 292")
+				if not(heatersOn):
+					print("Heaters Off OK")
 				else:
-					print("Switching off Pump and heaters")
-					heatersOn = relay.relayOFF(config.heatersRelayNumber)
-					pumpOn = relay.relayOFF(config.pumpRelayNumber)			
-					time_sleep(10)
+					print("Check Heaters")
 				time_sleep(10)
 				sys_exit()
 			except ValueError:
@@ -306,16 +331,15 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			# Following for looking at error correctoion
 			# print("Error correcting OK, Error : ",error,"  Correction : ", correction)
 	except KeyboardInterrupt:
-		print(".........Ctrl+C pressed... Output Off")
-		if heatersOn or pumpOn:
-			heatersOn = relay.relayOFF(config.heatersRelayNumber)
-			pumpOn = relay.relayON(config.pumpRelayNumber)
-			print("Running Pump for 60 seconds because heaters was on")
-			time_sleep(60) 
+		print(".........Ctrl+C pressed... Output Off321") 
+		heatersOn, successfullResult = cloud.operateSwitch(config.switchId,"switch_1",False)
+		if successfullResult:
+			print("Heater Operation OK 324")
+		if not(heatersOn):
+			print("Heaters Off OK")
 		else:
-			heatersOn = relay.relayOFF(config.heatersRelayNumber)
-			pumpOn = relay.relayOFF(config.pumpRelayNumber)			
-			time_sleep(10)
+			print("Check Heaters")
+		time_sleep(10)
 		sys_exit()
 
 	

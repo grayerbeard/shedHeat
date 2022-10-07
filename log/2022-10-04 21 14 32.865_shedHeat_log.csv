@@ -1,0 +1,2 @@
+Time,Hour in Day, Room Temp,Per 10 Mins,Predicted Temp,Target Temp,Other Temp1,OtherTemp2,heaters Status,offTime,onTime,Reason,Message,
+2022-10-04 21 15 00.000,21.25,14.8125,0.0,14.81,4.5,14.5,14.8125,OFF,0,0,start,,day: 1 hour: 21.25 TargTemp: 5,

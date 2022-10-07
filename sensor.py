@@ -40,7 +40,7 @@ class class_sensors:
 		self.sensorConfig = class_sensorConfig()
 		self.lastTemperatures = [self.sensorConfig.failDefault]*len(self.sensorConfig.cfgIds)
 		self.temperatures = [self.sensorConfig.failDefault]*len(self.sensorConfig.cfgIds)
-	def get_temp(self):
+	def getTemp(self):
 		sensorID = []
 		tempsFromSensors = []
 		self.temperatures = [self.sensorConfig.failDefault]*len(self.sensorConfig.cfgIds)
@@ -83,7 +83,7 @@ class class_sensors:
 			foundIndex = sensorID.index(code)
 			if code in self.sensorConfig.cfgIds:
 				cfgIdsIndex = self.sensorConfig.cfgIds.index(code)
-				print("This existing code : ",cfgIdsIndex,code,"  was found")
+				#print("This existing code : ",cfgIdsIndex,code,"  was found")
 				# no additional action needed we have already stoored the temperature in "temperatures" list.
 			else:
 				#this is a new code and must be added to the list
@@ -115,7 +115,7 @@ if __name__ == '__main__':
 	limit = 0
 	count = 0
 	while (count<limit) or (limit == 0):
-		temperatures = sensor.get_temp()
+		temperatures = sensor.getTemp()
 		thisTime = datetime.now()
 		cycleTime = round((thisTime - lastTime).total_seconds(),2)
 		lastTime = thisTime

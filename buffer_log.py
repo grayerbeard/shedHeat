@@ -51,6 +51,9 @@ class class_buffer_log:
 		self.log_filename = timestamp + "_" + self.__config.prog_name + "_" + self.__config.logType + ".csv"
 		self.__log_filename_save_as = self.__config.prog_path + self.__config.log_directory + self.log_filename
 		self.__local_www_log_filename = self.__config.local_dir_www + "/" + self.__config.log_directory + self.log_filename
+		print("self.log_filename : ",self.log_filename)
+		print("self.__log_filename_save_as : ",self.__log_filename_save_as)
+		print("self.__local_www_log_filename : ",self.__local_www_log_filename)
 
 	def log_to_file(self,log_headings,log_values):
 		here = 	"log_cpu_data_to_file"
@@ -74,7 +77,6 @@ class class_buffer_log:
 		return
 		
 	def send_log_by_ftp(self,FTP_dbug_flag,remote_log_dir,ftp_timeout):
-		here = "bffr_log_log_by_ftp"
 		ftp_result = send_by_ftp(FTP_dbug_flag,self.__config.ftp_creds_filename, self.__log_filename_save_as, \
 			self.log_filename,remote_log_dir,ftp_timeout)
 		for pres_ind in range(0,len(ftp_result)):
@@ -91,12 +93,11 @@ class class_buffer_log:
 		return
 					
 	def copy_log_to_www(self,dbug_flag):
-		here = "copy_log_to_www"
 		try:
 			# send the same html file to the local web site
 			copyfile(self.__log_filename_save_as, self.__local_www_log_filename)
-			pr(dbug_flag,0, "Sent : " + self.__log_filename_save_as + " to : ", self.__local_www_log_filename)
+			print( "Sent : " + self.__log_filename_save_as + " to : ", self.__local_www_log_filename)
 		except:
-			pr(True,0,"Fail with copy " + self.__log_filename_save_as + " to : ", self.__local_www_log_filename)
+			print("Fail with copy " + self.__log_filename_save_as + " to : ", self.__local_www_log_filename)
 
 

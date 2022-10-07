@@ -76,6 +76,10 @@ class class_text_buffer(object):
 		self.__html_filename = config.prog_name + "_" + self.__config.logType + ".html"
 		self.__html_filename_save_as = config.prog_path + self.__html_filename
 		self.__www_filename = config.local_dir_www + "/" + self.__html_filename
+		print("self.__html_filename : ",self.__html_filename)
+		print("self.__html_filename_save_as : ",self.__html_filename_save_as)
+		print("self.__www_filename : ",self.__www_filename)
+
 		try:
 			self.__ftp_creds = config.ftp_creds_filename
 		except:
@@ -97,6 +101,7 @@ class class_text_buffer(object):
 		return self.__config.text_buffer_length
 
 	def update_buffer(self,values,appnd,ref):
+		print("104 self.__send_log_count : ",self.__send_log_count)
 		#append a line of info at the current position plus 1 
 		# print("Update Buffer appnd and ref are : ",appnd,ref)
 		###
@@ -149,16 +154,18 @@ class class_text_buffer(object):
 					self.__log.copy_log_to_www(False)
 				except:
 					print("Failed to copy log file to www because this not there: ",self.__www_filename)
-			#send log file to website configevery ten scans
+			#send log file to website config every ten scans
 			
 			# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   NEXT    Needs to be time based @@@@@@@@@@@@@@@@@@@@@@@@@
 			
-			
+			print("160 self.__send_log_count : ",self.__send_log_count)
 			if self.__send_log_count > 10 and fileexists(self.__ftp_creds):
 				self.__log.send_log_by_ftp(False,self.__config.log_directory,self.__config.ftp_timeout)
 				self.__send_log_count = 0
-			else:
+			elif fileexists(self.__ftp_creds):
 				self.__send_log_count += 1
+			else:
+				self.__send_log_count = 0
  
 	def get_line_dta(self, key):
 		#return stored element from position relative to current insert position in buffer
@@ -269,6 +276,7 @@ class class_text_buffer(object):
 			self.email_html = self.email_html + file_end
 		
 		try:
+			print("Will try to copy : ",self.__html_filename," to ",self.__www_filename)
 			if appnd != True:	
 				copyfile(self.__html_filename, self.__www_filename)
 		except:

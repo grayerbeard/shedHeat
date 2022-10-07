@@ -9,9 +9,9 @@ from operator import itemgetter
 import tinytuya
 
 class class_tuyaCloud:
-	def __init__(self):
+	def __init__(self,numberSwitches):
 		self.cloud = tinytuya.Cloud()  # uses tinytuya.json
-		#self. = 
+		self.lastSwitchOn = [False]*numberSwitches
 
 	def listDevices(self):
 		# Display list of devicesapiKey
@@ -31,47 +31,170 @@ class class_tuyaCloud:
 		print("Status of Device:\n", result)
 		print("\n""\n")
 
-	def operateSwitch(self,id,code,on):    # Send Command - Turn on switch
+	def operateSwitch(self,switchNumber,id,code,stateWanted):    # Send Command - Turn on switch
+
+		# Assume online until get bad result and offline confirmed
+		offLine = False
+
 		commands = {
 			'commands': [{
 				'code': code,
-				'value': on
+				'value': stateWanted
 			}, {
 				'code': 'countdown_1',
 				'value': 0
 			}]
 		}
-		checkResult = self.cloud.sendcommand(id,commands)
-		successfulResult = result['success']
-		if on and successfulResult:
-			heaterOn = True
 
-		return heaterOn, successfulResult
-		#status = self.cloud.getstatus(id)
-		#print("Results\n:", result)
-		#if result['success']:
-		#	print("Worked")
-		#else:
-		#	print("Failed")
-		#print("Status\n", status)
-		#print("status['result'] : ",status['result'])
-		#values = list(map(itemgetter('value'), status['result']))
-		#codes = list(map(itemgetter('code'), status['result']))
-		#print("\n")
-		#for index in range(len(codes)):
-		#	print(code[index] ," is ",values[index])
+		# next for debug
+		print("will try now : ",switchNumber,id,code,stateWanted)
+		try:
+			checkResult = self.cloud.sendcommand(id,commands)
+		except:	
+			print("error in 53")
+			sys_exit()
 
+		# next line for debug
+		print("checkResult : ",checkResult)
+		successfullResult = checkResult['success']
+		if successfullResult:
+			switchOn = stateWanted
+		else:
+			# not successful so return last known state and error flag
+			switchOn = self.lastSwitchOn[switchNumber]
+			if checkResult.get('msg','device is online') == 'device is offline':
+				offLine = True
+			return switchOn, successfullResult,offLine
+
+		# So switch operation was successful so save the result
+		self.lastSwitchOn[switchNumber] = switchOn
+
+		# return the result
+		return switchOn, successfullResult, offLine
 
 # test routine rin when script run direct
 if __name__ == '__main__':
-	cloud = class_tuyaCloud()
+	# change this to suite number of switches.
+	numberSwitches = 2 # one power switch and one heat pump
+
+	# set up the class	
+	cloud = class_tuyaCloud(numberSwitches)
+
+	# uncomment line below to get list of devices
 	#cloud.listDevices()
-	id = "bf5723e4b65de4a64fteqz"  
+
+	# uncomment three lines below and set id to check a particular device 
+	#id = "bf5723e4b65de4a64fteqz"  
 	#cloud.deviceProperties(id)
 	#cloud.deviceStatus(id)
-	#cloud.operateSwitch(id,"switch_1",True)
-	#time_sleep(20)
-	if cloud.operateSwitch(id,"switch_1",False):
+
+	# uncomment three lines below and set id to check a particular device 
+	#id = "01303121a4e57cb7ca0c"  
+	#cloud.deviceProperties(id)
+	#cloud.deviceStatus(id)	
+
+
+	# test power switch that has a switch code of "switch_1"
+	# Using id found from print out doing above
+	# note we use switchNumber 0
+
+	print("Test power switch")
+
+	switchNumber = 0
+	id = "bf5723e4b65de4a64fteqz"
+	code = "switch_1"
+
+	stateWanted = False
+	switchOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+	if successfullResult:
 		print("worked ok")
+		if switchOn:
+			print("Switch On")
+		else:
+			print("Switch off")
 	else:
-		Print("failed")
+		print("Switch Operation failed")
+		if offLine:
+			print("Device is Offline")
+	time_sleep(5)
+
+	stateWanted = True
+	switchOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+	if successfullResult:
+		print("worked ok")
+		if switchOn:
+			print("Switch On")
+		else:
+			print("Switch off")
+	else:
+		print("Switch Operation failed")
+		if offLine:
+			print("Device is Offline")
+	time_sleep(5)
+
+	stateWanted = False
+	switchOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+	if successfullResult:
+		print("worked ok")
+		if switchOn:
+			print("Switch On")
+		else:
+			print("Switch off")
+	else:
+		print("Switch Operation failed")	
+		if offLine:
+			print("Device is Offline")
+
+	# test power on off of heat pump that has power switch code of "switch"
+	# Using id found from print out doing above
+	# note we use switchNumber 1
+
+	print("Test power switch on/off of Heat Pump")
+
+	switchNumber = 1
+	id = "01303121a4e57cb7ca0c"
+	code = "switch"
+	stateWanted = False
+
+	switchOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+	if successfullResult:
+		print("worked ok")
+		if switchOn:
+			print("Switch On")
+		else:
+			print("Switch off")
+	else:
+		print("Switch Operation failed")
+		if offLine:
+			print("Device is Offline")
+
+	time_sleep(5)
+
+	stateWanted = True
+	switchOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+	if successfullResult:
+		print("worked ok")
+		if switchOn:
+			print("Switch On")
+		else:
+			print("Switch off")
+	else:
+		print("Switch Operation failed")
+
+		if offLine:
+			print("Device is Offline")
+
+	time_sleep(20)
+
+	stateWanted = False
+	switchOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+	if successfullResult:
+		print("worked ok")
+		if switchOn:
+			print("Switch On")
+		else:
+			print("Switch off")
+	else:
+		print("Switch Operation failed")	
+		if offLine:
+			print("Device is Offline")

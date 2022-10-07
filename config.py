@@ -57,8 +57,8 @@ class class_config:
 	# Schedule
 		self.program0 = (5, 6,5)  # Edit Monday Times and temperatures
 		self.program1 = (5, 6,5)  # Edit Tuesday Times and temperatures
-		self.program2 = (30, 6,10, 7,12, 8,14, 9,16, 10,17, 11,16, 15,5)  # Edit Wednesday Times and temperatures
-		self.program3 = (30, 6,10, 7,12, 8,14, 9,16, 10,17, 11,16, 15,5)  # Edit Thursday Times and temperatures
+		self.program2 = (5, 7.5,14.25, 8,14.75, 8.5,15.25, 9,15.75, 9.5,16.00, 10,16.25, 10.5,16, 15.5,5)  # Edit Wednesday Times and temperatures
+		self.program3 = (5, 7.5,14.25, 8,14.75, 8.5,15.25, 9,15.75, 9.5,16.00, 10,16.25, 10.5,16, 15.5,5)  # Edit Thursday Times and temperatures
 		self.program4 = (5, 6,5)  # Edit Friday Times and temperatures
 		self.program5 = (5, 6,5)  # Edit Saturday Times and temperatures
 		self.program6 = (5, 6,5)  # Edit Sunday Times and temperatures
@@ -78,7 +78,7 @@ class class_config:
 		self.logType = "log" # default log type
 		print("Program Name is : ",self.prog_name)
 		print("config file is : ",self.config_filename)
-"bf5723e4b65de4a64fteqz"
+
 	def read_file(self):
 		here = "config.read_file"
 		config_read = RawConfigParser()
@@ -92,7 +92,7 @@ class class_config:
 		self.local_dir_www = config_read.get(section, 'local_dir_www')
 		self.log_buffer_flag = config_read.getboolean(section, 'log_buffer_flag')
 		self.text_buffer_length  = int(config_read.get(section, 'text_buffer_length'))		
-		section = "Schedure"
+		section = "Schedule"
 		self.program0 =  config_read.get(section, 'program0').split(",")
 		self.program1 =  config_read.get(section, 'program1').split(",")
 		self.program2 =  config_read.get(section, 'program2').split(",")

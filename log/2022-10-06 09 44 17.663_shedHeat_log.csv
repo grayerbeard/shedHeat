@@ -1,0 +1,6 @@
+Time,Hour in Day, Room Temp,Per 10 Mins,Predicted Temp,Target Temp,Other Temp1,OtherTemp2,heaters Status,offTime,onTime,Reason,Message,
+2022-10-06 09 45 00.000,9.75,15.8125,47.44,31.62,15.75,15.375,14.8125,OFF,0,0,start,,day: 3 hour: 9.75 TargTemp: 16.0,
+2022-10-06 09 45 20.007,9.75,15.75,42.51,29.92,15.75,15.3125,14.8125,OFF,0,0,start,,day: 3 hour: 9.75 TargTemp: 16.0,
+2022-10-06 09 45 40.009,9.75,15.75,38.26,28.5,15.75,15.3125,14.875,OFF,0,0,start,,day: 3 hour: 9.75 TargTemp: 16.0,
+2022-10-06 09 46 00.016,9.77,15.6875,34.24,27.1,15.75,15.25,14.875,OFF,0,0,start,,day: 3 hour: 9.77 TargTemp: 16.0,
+2022-10-06 09 46 20.022,9.77,15.6875,30.82,25.96,15.75,15.25,14.875,OFF,0,0,start,,day: 3 hour: 9.77 TargTemp: 16.0,
