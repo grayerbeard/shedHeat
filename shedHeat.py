@@ -90,7 +90,9 @@ headings = ["Hour in Day"," Room Temp","Per 10 Mins","Predicted Temp","Target Te
 logBuffer = class_text_buffer(headings,config,logType,logTime)
 
 sensor = class_sensors()
-cloud = class_tuyaCloud()
+
+numberSwitches = 2
+cloud = class_tuyaCloud(numberSwitches)
 
 # Set The Initial Conditions
 the_end_time = datetime.now()
@@ -104,11 +106,19 @@ else:
 	refresh_time = 2*config.scan_delay
 
 print("at Start up Turn heaters Off")
-heatersOn, successfullResult = cloud.operateSwitch(config.switchId,"switch_1",False)
+
+
+switchNumber = 0
+id = config.switchId
+code = "switch_1"
+stateWanted = False
+heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
 if successfullResult:
 	print("Heater Switch Working")
 else:
 	print("Heater Operation Fail")
+if offLine:
+	print("Switch is offLine")
 	#id = "bf5723e4b65de4a64fteqz"
 	#heatersOn, successfullResult = cloud.operateSwitch(id,"switch_1",False)
 	#if successfullResult:
@@ -185,42 +195,54 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 		# Do Control
 		temperatures = sensor.getTemp()
 		temp = temperatures[config.sensor4readings]
+		if config.scan_count < 2:
+			lastTemp = temp
 
 		if temp < 0 : # Nor Sensor Connected
-			print("no Senso connected will turn heaters Off")
-			heatersOn, successfullResult = cloud.operateSwitch(config.switchId,"switch_1",False)
+			print("no Sensor connected will turn heaters Off")
+			switchNumber = 0
+			id = config.switchId
+			code = "switch_1"
+			stateWanted = False
+			heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
 			if not(successfullResult):
-				print("Heater Operation Fail")
-				message = message + " Htr Op Fail"
+				print("Heater Operation Fail while shutting down no sensors")
+				message = message + " Htr Op Fail noo sensors"
 				increment = True
 			sys_exit()
 		else:
-			tempChange = temp - lastTemp
+			tempChange = (temp - lastTemp)*config.scan_delay/60 # degrees per minute
 			changeRate = changeRate + (0.1 * (tempChange - changeRate))
-			if changeRate < -0.15:
+			if abs(changeRate) * 3 > 2:
 				changeRate = changeRate * 0.95
-				message = message + " RR,"
+				message = message + " RR" + str(round(changeRate,3)) + ", "
 				print("changeRate reduced : ",changeRate)
-				
 				increment = True
 				reason = reason + "ChangeRateReduced"
 				
-			predictedTemp = temp + 10 * changeRate
+			predictedTemp = temp + (3 * changeRate)
 			lastTemp = temp
 			
 			if predictedTemp >= targetTemp:
+
 				if heatersOn : # This is a change from ON to OFF
 					#print("Temp NOW > Target so turn heaters off")
 					heatersTurnOffTime = logTime
 					increment = True
 					reason = reason + "heaters Off,"
-
 					message = message + " heaters Turned OFF"
-				heatersOn, successfullResult = cloud.operateSwitch(config.switchId,"switch_1",False)
+
+				switchNumber = 0
+				id = config.switchId
+				code = "switch_1"
+				stateWanted = False
+				heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
 				if not(successfullResult):
 					increment = True
 					reason = reason + " Heater turn off Fault, "
 					print("Heater Operation Fail")
+				if offLine:
+					reason = reason + " Heater Switch Offline, "
 			else:
 				if not heatersOn : # This is a change from OFF to ON
 					#print("Temp < Target so turn heaters ON")
@@ -229,11 +251,18 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 					increment = True
 					reason = reason + "heatersON"
 					message = message + "heaters Turned"
-				heatersOn, successfullResult = cloud.operateSwitch(config.switchId,"switch_1",True)
+				switchNumber = 0
+				id = config.switchId
+				code = "switch_1"
+				stateWanted = True
+				heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
 				if not(successfullResult):
 					increment = True
 					reason = reason + " Heater turn on Fault, "
 					print("Heater Operation Fail")
+				if offLine:
+					increment = True
+					reason = reason + " Heater Switch Offline, "
 
 		# Do Logging
 		#" Room Temp","Target Temp","heaters Status","Message"]
@@ -263,17 +292,9 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			increment = True
 			reason = reason + " MustLog, "
 			
-		if (config.scan_count < 5) or (tries > 0) or (sensor.errorCount > 0): #or getTheTempError:
-			
+		if (config.scan_count < 5): 
 			increment = True
-			if (config.scan_count < 5):
-				reason = reason + "start,"
-#			if (tries > 0):
-#				reason = reason + "tries,"
-#			if (sensor.errorCount > 0):
-#				reason = reason + "errors,"
-#			if getTheTempError:
-#				reason = reason + "temperror,"
+			reason = reason + "start,"
 
 		logBuffer.line_values["Reason"]  = reason
 		logBuffer.line_values["Message"]  = message
@@ -300,7 +321,11 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			except KeyboardInterrupt:
 				print(".........Ctrl+C pressed... Output Off 288")
 				print("Switching off heaters")
-				heatersOn, successfullResult = cloud.operateSwitch(config.switchId,"switch_1",False)
+				switchNumber = 0
+				id = config.switchId
+				code = "switch_1"
+				stateWanted = False
+				heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
 				if successfullResult:
 					print("Heater Operation OK 292")
 				if not(heatersOn):
@@ -332,7 +357,11 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			# print("Error correcting OK, Error : ",error,"  Correction : ", correction)
 	except KeyboardInterrupt:
 		print(".........Ctrl+C pressed... Output Off321") 
-		heatersOn, successfullResult = cloud.operateSwitch(config.switchId,"switch_1",False)
+		switchNumber = 0
+		id = config.switchId
+		code = "switch_1"
+		stateWanted = False
+		heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
 		if successfullResult:
 			print("Heater Operation OK 324")
 		if not(heatersOn):
