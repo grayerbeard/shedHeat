@@ -96,7 +96,8 @@ class class_buffer_log:
 		try:
 			# send the same html file to the local web site
 			copyfile(self.__log_filename_save_as, self.__local_www_log_filename)
-			print( "Sent : " + self.__log_filename_save_as + " to : ", self.__local_www_log_filename)
+			#next for debug
+			#print( "Sent : " + self.__log_filename_save_as + " to : ", self.__local_www_log_filename)
 		except:
 			print("Fail with copy " + self.__log_filename_save_as + " to : ", self.__local_www_log_filename)
 

@@ -47,15 +47,15 @@ class class_tuyaCloud:
 		}
 
 		# next for debug
-		print("will try now : ",switchNumber,id,code,stateWanted)
-		try:
-			checkResult = self.cloud.sendcommand(id,commands)
-		except:	
-			print("error in 53")
-			sys_exit()
+		#print("will try now : ",switchNumber,id,code,stateWanted)
+		#try:
+		checkResult = self.cloud.sendcommand(id,commands)
+		#except:	
+			#print("error in 53")
+			#sys_exit()
 
-		# next line for debug
-		print("checkResult : ",checkResult)
+		# next for debug
+		#print("checkResult : ",checkResult)
 		successfullResult = checkResult['success']
 		if successfullResult:
 			switchOn = stateWanted

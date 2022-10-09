@@ -101,7 +101,8 @@ class class_text_buffer(object):
 		return self.__config.text_buffer_length
 
 	def update_buffer(self,values,appnd,ref):
-		print("104 self.__send_log_count : ",self.__send_log_count)
+		#next for debug
+		#print("104 self.__send_log_count : ",self.__send_log_count)
 		#append a line of info at the current position plus 1 
 		# print("Update Buffer appnd and ref are : ",appnd,ref)
 		###
@@ -157,8 +158,8 @@ class class_text_buffer(object):
 			#send log file to website config every ten scans
 			
 			# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   NEXT    Needs to be time based @@@@@@@@@@@@@@@@@@@@@@@@@
-			
-			print("160 self.__send_log_count : ",self.__send_log_count)
+			#next for debug
+			#print("160 self.__send_log_count : ",self.__send_log_count)
 			if self.__send_log_count > 10 and fileexists(self.__ftp_creds):
 				self.__log.send_log_by_ftp(False,self.__config.log_directory,self.__config.ftp_timeout)
 				self.__send_log_count = 0
@@ -276,7 +277,8 @@ class class_text_buffer(object):
 			self.email_html = self.email_html + file_end
 		
 		try:
-			print("Will try to copy : ",self.__html_filename," to ",self.__www_filename)
+			#next for debug
+			#print("Will try to copy : ",self.__html_filename," to ",self.__www_filename)
 			if appnd != True:	
 				copyfile(self.__html_filename, self.__www_filename)
 		except:

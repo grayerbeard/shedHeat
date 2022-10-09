@@ -28,71 +28,34 @@ from os import path
 from datetime import datetime
 from sys import exit as sys_exit
 from subprocess import call
+import numpy as np
 
 # Third party imports
 # None
 # Local application imports
-from config import class_config
+from configHp import class_config
+from schedule import class_schedule
 from text_buffer import class_text_buffer
 from utility import fileexists,pr,make_time_text
 # Note use of sensor_test possible on next line
 from sensor import class_sensors
 from tuyaCloud import class_tuyaCloud
-
 #Set up Config file and read it in if present
+
 config = class_config()
-if fileexists(config.config_filename):		
-	print( "will try to read Config File : " ,config.config_filename)
-	config.read_file() # overwrites from file
-else : # no file so file needs to be writen
-	config.write_file()
-	print("New Config File Made with default values, you probably need to edit it")
-	
-print ("0",config.program0)
-print ("1",config.program1)
-print ("2",config.program2)
-print ("3",config.program3)
-print ("4",config.program4)
-print ("5",config.program5)
-print ("6",config.program6)
-
-
-program = [[0] for i in range(7)]
-
-for item in config.program0:
-	program[0].append(float(item))
-for item in config.program1:
-	program[1].append(float(item))
-for item in config.program2:
-	program[2].append(float(item))
-for item in config.program3:
-	program[3].append(float(item))
-for item in config.program4:
-	program[4].append(float(item))
-for item in config.program5:
-	program[5].append(float(item))
-for item in config.program6:
-	program[6].append(float(item))	
-print (program)
-		
-	
-config.scan_count = 0
-logTime= datetime.now()
-heatersTurnOffTime = logTime
-heatersTurnOnTime = logTime
-overRunStartTime = logTime
-onTime = 0
-offTime = 0
-
-logType = "log"
-headings = ["Hour in Day"," Room Temp","Per 10 Mins","Predicted Temp","Target Temp","Heat Pmp Out","OutDoor","heaters Status",\
-	"offTime","onTime","Reason","Message"]
-logBuffer = class_text_buffer(headings,config,logType,logTime)
+schedule = class_scehule(config)
 
 sensor = class_sensors()
 
 numberSwitches = 2
 cloud = class_tuyaCloud(numberSwitches)
+
+logTime= datetime.now()
+logType = "log"
+headings = ["Hour in Day","Room Temp","Per 10 Mins","Predicted Temp","Heaters Target Temp","HP Target Temp", \
+			"HP Out","Outside","Heaters Status","HP Status","TotalHeaters","TotalHP","Reason","Message"]
+logBuffer = class_text_buffer(headings,config,logType,logTime)
+
 
 # Set The Initial Conditions
 the_end_time = datetime.now()
@@ -130,12 +93,13 @@ if offLine:
 startHold = True
 lastHoldMin = logTime.minute 
 lastHoldSec = 0
-targetTemp = 0
+
 programTemp = 0
 increment = True
 changeRate = 0
 #lastTemp,tries = sensor.getTemp()
 lastTemp = 0
+lastDayInWeek = -1
 getTheTempError = False
 lastLogTime = logTime
 predictedTemp = 0
@@ -143,6 +107,9 @@ overRun = False
 overRunLogCount = 0
 tries = 0  # NOT being set at the moment
 sensor.errorCount = 0 # NOT being set at the moment
+
+totalHeaterOnTime = 0
+totalHpOnTime = 0
 
 #tempMeasureErrorCount = 0
 #maxTries = 0
@@ -155,59 +122,50 @@ reason = ""
 
 while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 	try:
-		while startHold:
-		#while False:
-			logTime = datetime.now()
-			holdMin = logTime.minute
-			holdSec = logTime.second
-			if holdMin != lastHoldMin:
-				startHold = False
-				break
-			if holdSec > (lastHoldSec + 5):
-				print("Waiting for next Minute : ",(60 - holdSec))
-				lastHoldSec = holdSec
 		# Sort out Time in Day and Day in week etc
 		logTime= datetime.now()
 		dayInWeek = logTime.weekday()
 		hourInDay = logTime.hour + (logTime.minute/60)
-#		dayTime = config.day_start <= hourInDay <= config.night_start
-		
-		numValues = len(program[dayInWeek])
-		ind = 0
-		while ind<(numValues):
-			progHour = program[dayInWeek][ind]
-			if (ind + 2) < numValues:
-				nextProgHour = program[dayInWeek][ind + 2]
-			else:
-				nextProgHour = 24
-			progTemp = program[dayInWeek][ind + 1]
-			if progHour < hourInDay < nextProgHour:
-				targetTemp = progTemp
-			#next for debug	
-			#print("targetTemp is: ",targetTemp,"from : ",progHour," to : ",nextProgHour)
-			ind +=2
-		message = "day: " + str(dayInWeek) + " hour: " + str(round(hourInDay,2)) + " TargTemp: " + str(targetTemp)
+		shedStatus,desiredTemp,targetHp,targetHeaters = self.calcTargets(hourInDay)
+		if dayInWeek != lastDayInWeek:
+			totalHeaterOnTime = 0
+			totalHpOnTime = 0
 
 		if heatersOn:
-			targetTemp += config.hysteresis
+			targetHeaters += config.hysteresis
 		else:
-			targetTemp -= config.hysteresis
+			targetHeaters -= config.hysteresis
+
+		if hpOn:
+			targetHp += config.hysteresis
+		else:
+			targetHp -= config.hysteresis
 		
 		# Do Control
 		temperatures = sensor.getTemp()
-		temp = temperatures[config.sensor4readings]
+		temp = temperatures[config.sensorRoomTemp]
 		if config.scan_count < 2:
 			lastTemp = temp
 
-		if temp < 0 : # Nor Sensor Connected
+		if temp < 0 : # No Sensor Connected
 			print("no Sensor connected will turn heaters Off")
-			switchNumber = 0
-			id = config.switchId
-			code = "switch_1"
+			switchNumber = config.switchNumberHeaters
+			id = config.switchIdHeaters
+			code = config.codeHeaters
 			stateWanted = False
 			heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
 			if not(successfullResult):
 				print("Heater Operation Fail while shutting down no sensors")
+				message = message + " Htr Op Fail noo sensors"
+				increment = True
+
+			switchNumber = config.switchNumberHp
+			id = config.switchIdHp
+			code = config.codeHp
+			stateWanted = False
+			hpOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+			if not(successfullResult):
+				print("Heat Pump Operation Fail while shutting down no sensors")
 				message = message + " Htr Op Fail noo sensors"
 				increment = True
 			sys_exit()
@@ -224,18 +182,19 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			predictedTemp = temp + (3 * changeRate)
 			lastTemp = temp
 			
-			if predictedTemp >= targetTemp:
+			if predictedTemp >= targetHeaters
 
 				if heatersOn : # This is a change from ON to OFF
-					#print("Temp NOW > Target so turn heaters off")
 					heatersTurnOffTime = logTime
+					heatersOnTime = (heatersTurnOffTime - heatersTurnOnTime).total_seconds() / 60.0
+					totalHeatersOnTime += onTime
 					increment = True
-					reason = reason + "heaters Off,"
-					message = message + " heaters Turned OFF"
+					reason = reason + "switchNumberHpheaters Off,"
+					message = message + "htrs off after " + str(round(onTime)
 
-				switchNumber = 0
-				id = config.switchId
-				code = "switch_1"
+				switchNumber = config.switchNumberHeaters
+				id = config.switchIdHeaters
+				code = config.codeHeaters
 				stateWanted = False
 				heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
 				if not(successfullResult):
@@ -248,13 +207,13 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 				if not heatersOn : # This is a change from OFF to ON
 					#print("Temp < Target so turn heaters ON")
 					heatersTurnOnTime = logTime
-					onTime = (heatersTurnOnTime - heatersTurnOffTime).total_seconds() / 60.0
+					heatersOffTime = (heatersTurnOnTime - heatersTurnOffTime).total_seconds() / 60.0
 					increment = True
 					reason = reason + "heatersON"
-					message = message + "heaters Turned"
-				switchNumber = 0
-				id = config.switchId
-				code = "switch_1"
+					message = message + "htrs on after " + str(round(heatersOffTime)
+				switchNumber = config.switchNumberHeaters
+				id = config.switchIdHeaters
+				code = config.codeHeaters
 				stateWanted = True
 				heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
 				if not(successfullResult):
@@ -268,21 +227,26 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 		# Do Logging
 		#" Room Temp","Target Temp","heaters Status","Message"]
 		logBuffer.line_values["Hour in Day"]  =  round(hourInDay,2)
-		logBuffer.line_values["RoomTemp"]  = temp
+		logBuffer.line_values["RoomTemp"]  = round(temperatures[0],2)
 		logBuffer.line_values["Per 10 Mins"] = round(changeRate*10*60/config.scan_delay,2)
 		logBuffer.line_values["Predicted Temp"] = round(predictedTemp,2)
-		logBuffer.line_values["Target Temp"]  = targetTemp
-		logBuffer.line_values["Other Temp1"]  = temperatures[1]
-		logBuffer.line_values["Other Temp2"]  = temperatures[2]
+		logBuffer.line_values["Heaters Target Temp"]  = ########
+		logBuffer.line_values["HP Target Temp"]  = ########
+		logBuffer.line_values["HP Out"]  = round(temperatures[1],2)
+		logBuffer.line_values["Outside"]  = round(temperatures[2],2)
 		if heatersOn:
-			logBuffer.line_values["heaters Status"]  = "ON"
+			logBuffer.line_values["Heaters Status"]  = "ON"
 		else:
 			logBuffer.line_values["heaters Status"]  = "OFF"
-		logBuffer.line_values["offTime"]  = round(offTime,2)
-		logBuffer.line_values["onTime"]  = round(onTime,2)
+		if hpOn:
+			logBuffer.line_values["HP Status"]  = "ON"
+		else:
+			logBuffer.line_values["HP Status"]  = "OFF"
+		logBuffer.line_values["TotalHeaters"]  = round(offTime,2)
+		logBuffer.line_values["TotalHP"]  = round(onTime,2)
 
-#headings = ["Hour in Day"," Room Temp","Per 10 Mins","Predicted Temp","Target Temp","Other Temp1","OtherTemp2","heaters Status",\
-#	"offTime","onTime","Reason","Message"]
+#headings = ["Hour in Day"," Room Temp","Per 10 Mins","Predicted Temp","Heaters Target Temp","HP Target Temp", \
+# "HP Out","Outside","Heaters Status","HP Status","TotalHeaters","TotalHP","Reason","Message"]
 
 		#Ensure logs at least every config.mustLog minutes 
 		timeSinceLog = (logTime - lastLogTime).total_seconds() / 60.0
