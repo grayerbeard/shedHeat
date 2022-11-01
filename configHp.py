@@ -39,7 +39,7 @@ from os import path
 from sys import argv as sys_argv
 from sys import exit as sys_exit
 
-from utility import fileexists,pr,make_time_text
+from utility import fileexists,pr,make_time_text,makeBoolean
 
 # Third party imports
 #from w1thermsensor import W1ThermSensor
@@ -79,26 +79,40 @@ class class_config:
 		self.log_directory = config_read.get(section, 'log_directory')
 		self.local_dir_www = config_read.get(section, 'local_dir_www')
 		self.log_buffer_flag = config_read.getboolean(section, 'log_buffer_flag')
-		self.text_buffer_length  = int(config_read.get(section, 'text_buffer_length'))		
+		self.text_buffer_length  = config_read.getint(section, 'text_buffer_length')		
 
 		section = "Schedule"
-		self.shedOpens = float(config_read.get(section, 'shedOpens'))
-		self.shedCloses = float(config_read.get(section, 'shedCloses'))
-		self.desiredTemperature = float(config_read.get(section, 'desiredTemperature'))
-		self.temperatureSlope = float(config_read.get(section, 'temperatureSlope'))
-		self.fanHeaterFollowTime = float(config_read.get(section, 'fanHeaterFollowTime'))
-		self.fanHeaterFollowTemp = float(config_read.get(section, 'fanHeaterFollowTemp'))
+		shedDays = config_read.get(section, 'shedDays').split(",")
+		self.shedDays = []
+		for shedDay in shedDays:
+			self.shedDays.append(float(shedDay))
+		self.shedOpens = config_read.getfloat(section, 'shedOpens')
+		self.shedCloses = config_read.getfloat(section, 'shedCloses')
+		self.desiredTemperature = config_read.getfloat(section, 'desiredTemperature')
+		self.temperatureSlope = config_read.getfloat(section, 'temperatureSlope')
+		self.fanHeaterFollowTime = config_read.getfloat(section, 'fanHeaterFollowTime')
+		self.fanHeaterFollowTemp = config_read.getfloat(section, 'fanHeaterFollowTemp')
 
 		section = "MeasureAndControl"
 
-		self.hysteresis =  float(config_read.get(section, 'hysteresis'))
-		self.sensorTargetTemp =  int(config_read.get(section, 'sensorTargetTemp'))
-		self.sensorHpOut = int(config_read.get(section, 'sensorHpOut'))
-		self.sensorOutside = int(config_read.get(section, 'sensorOutside'))
-		self.switchNumberHeaters = int(config_read.get(section, 'switchNumberHeaters'))
+		self.hysteresis =  config_read.getfloat(section, 'hysteresis')
+		self.sensorRoomTemp =  config_read.getint(section, 'sensorRoomTemp')
+		self.sensorHpOut = config_read.getint(section, 'sensorHpOut')
+		self.sensorOutside = config_read.getint(section, 'sensorOutside')
+		self.names = config_read.get(section, 'names').split(",")
+		self.ids   = config_read.get(section, 'ids').split(",")
+		self.codes = config_read.get(section, 'codes').split(",")
+		useDevices = config_read.get(section, 'useDevices').split(",")
+		self.devices = makeBoolean(useDevices)
+		print(self.names,self.ids,self.codes,self.useDevices)
+
+
+		self.switchNumberHeaters = config_read.getint(section, 'switchNumberHeaters')
 		self.switchIdHeaters = config_read.get(section, 'switchIdHeaters')
 		self.codeHeaters = config_read.get(section, 'codeHeaters')
-		self.switchNumberHp = int(config_read.get(section, 'switchNumberHp'))
-		self.switchIdHeaters = config_read.get(section, 'switchIdHeaters')
+		self.switchNumberHp = config_read.getint(section, 'switchNumberHp')
+		self.switchIdHp = config_read.get(section, 'switchIdHp')
 		self.codeHp = config_read.get(section, 'codeHp')
+		self.useHeaters = config_read.getboolean(section, 'useHeaters' )
+		self.useHp = config_read.getboolean(section,'useHp')
 		return

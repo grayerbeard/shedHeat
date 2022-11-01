@@ -159,3 +159,7 @@ def send_by_ftp(dbug_send_ftp,ftp_cred,send_filename, save_as_filename, ftp_remo
 		print("Error Trying To Send " + send_filename + " file by FTP", "Try setting dbug flag to investigate")
 	return(result)
 
+def makeBoolean(inputString):
+	print(type(inputString))
+	result = (True,True)
+	return 

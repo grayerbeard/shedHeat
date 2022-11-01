@@ -43,7 +43,9 @@ from tuyaCloud import class_tuyaCloud
 #Set up Config file and read it in if present
 
 config = class_config()
-schedule = class_scehule(config)
+sys_exit()
+config.scan_count = 0
+schedule = class_schedule(config)
 
 sensor = class_sensors()
 
@@ -68,31 +70,57 @@ if config.scan_delay > 9:
 else:
 	refresh_time = 2*config.scan_delay
 
-print("at Start up Turn heaters Off")
+# Check Heaters Switch
 
-
-switchNumber = 0
-id = config.switchId
-code = "switch_1"
+heatersOn = False
+checkFail = False
+switchNumber = config.switchNumberHeaters
+id = config.switchIdHeaters
+code = config.codeHeaters
 stateWanted = False
 heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
 if successfullResult:
-	print("Heater Switch Working")
+	print("Heaters Switch Working")
 else:
-	print("Heater Operation Fail")
+	print("Heaters Operation Fail")
+	checkFail = True
 if offLine:
-	print("Switch is offLine")
-	#id = "bf5723e4b65de4a64fteqz"
-	#heatersOn, successfullResult = cloud.operateSwitch(id,"switch_1",False)
-	#if successfullResult:
-	#	print("Heater Switch Working")
-	#else:
-	#	print("Heater Operation Fail")
-	sys_exit()
+	print("Heaters  Switch is offLine")
+	checkFail = True
 
-startHold = True
-lastHoldMin = logTime.minute 
-lastHoldSec = 0
+if checkFail and config.useHeaters:
+	print("Heaters required but initial start up test failed")
+	sys_exit()
+elif checkFail:
+	print("Heaters not available but not required according Config File")
+
+# Check operation of Heat Pump Switch
+
+hpOn = False
+checkFail = False
+switchNumber = config.switchNumberHp
+id = config.switchIdHp
+code = config.codeHp
+stateWanted = False
+heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+if successfullResult:
+	print("HP Switch Working")
+else:
+	print("HP Operation Fail")
+	checkFail = True
+if offLine:
+	print("HP Switch is offLine")
+	checkFail = True
+
+if checkFail and config.useHp:
+	print("Exit HP selected but Failed Start up Test")
+	sys_exit()
+elif checkFail:
+	print("Heat Pump not available but not required according Config File")
+
+#startHold = True
+#lastHoldMin = logTime.minute 
+#lastHoldSec = 0
 
 programTemp = 0
 increment = True
@@ -108,8 +136,7 @@ overRunLogCount = 0
 tries = 0  # NOT being set at the moment
 sensor.errorCount = 0 # NOT being set at the moment
 
-totalHeaterOnTime = 0
-totalHpOnTime = 0
+
 
 #tempMeasureErrorCount = 0
 #maxTries = 0
@@ -126,23 +153,29 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 		logTime= datetime.now()
 		dayInWeek = logTime.weekday()
 		hourInDay = logTime.hour + (logTime.minute/60)
-		shedStatus,desiredTemp,targetHp,targetHeaters = self.calcTargets(hourInDay)
+		shedStatus,desiredTemp,targetHp,targetHeaters = schedule.calcTargets(hourInDay,dayInWeek)
+		message = message + shedStatus
 		if dayInWeek != lastDayInWeek:
-			totalHeaterOnTime = 0
+			totalHeatersOnTime = 0
 			totalHpOnTime = 0
 
-		if heatersOn:
-			targetHeaters += config.hysteresis
-		else:
-			targetHeaters -= config.hysteresis
+		if targetHeaters != 0:
+			if heatersOn:
+				targetHeaters += config.hysteresis
+			else:
+				targetHeaters -= config.hysteresis
 
-		if hpOn:
-			targetHp += config.hysteresis
-		else:
-			targetHp -= config.hysteresis
+		if targetHp != 0:	
+			if hpOn:
+				targetHp += config.hysteresis
+			else:
+				targetHp -= config.hysteresis
 		
 		# Do Control
+		startGetTemp = datetime.now()
 		temperatures = sensor.getTemp()
+		getTempTime = round((datetime.now()- startGetTemp).total_seconds(),2)
+		print(f'Time taken get temperatures is {getTempTime}')
 		temp = temperatures[config.sensorRoomTemp]
 		if config.scan_count < 2:
 			lastTemp = temp
@@ -153,7 +186,11 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			id = config.switchIdHeaters
 			code = config.codeHeaters
 			stateWanted = False
-			heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+			try:
+				heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+			except:
+				increment = True
+				reason = reason + "exception in cloud.operateSwitch for Heaters"
 			if not(successfullResult):
 				print("Heater Operation Fail while shutting down no sensors")
 				message = message + " Htr Op Fail noo sensors"
@@ -163,7 +200,11 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			id = config.switchIdHp
 			code = config.codeHp
 			stateWanted = False
-			hpOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+			try:
+				hpOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+			except:
+				increment = true
+				reason = reason + "exception in cloud.operateSwitch for Heat Pump"
 			if not(successfullResult):
 				print("Heat Pump Operation Fail while shutting down no sensors")
 				message = message + " Htr Op Fail noo sensors"
@@ -182,21 +223,25 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			predictedTemp = temp + (3 * changeRate)
 			lastTemp = temp
 			
-			if predictedTemp >= targetHeaters
+			if predictedTemp >= targetHeaters:
 
 				if heatersOn : # This is a change from ON to OFF
 					heatersTurnOffTime = logTime
 					heatersOnTime = (heatersTurnOffTime - heatersTurnOnTime).total_seconds() / 60.0
-					totalHeatersOnTime += onTime
+					totalHeatersOnTime += heatersOnTime
 					increment = True
 					reason = reason + "switchNumberHpheaters Off,"
-					message = message + "htrs off after " + str(round(onTime)
+					message = message + "htrs off after " + str(round(onTime,2))
 
 				switchNumber = config.switchNumberHeaters
 				id = config.switchIdHeaters
 				code = config.codeHeaters
 				stateWanted = False
-				heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+				try:
+					heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+				except:
+					increment = True
+					reason = reason + "exception in cloud.operateSwitch for Heaters"
 				if not(successfullResult):
 					increment = True
 					reason = reason + " Heater turn off Fault, "
@@ -210,12 +255,16 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 					heatersOffTime = (heatersTurnOnTime - heatersTurnOffTime).total_seconds() / 60.0
 					increment = True
 					reason = reason + "heatersON"
-					message = message + "htrs on after " + str(round(heatersOffTime)
+					message = message + "htrs on after " + str(round(heatersOffTime,2))
 				switchNumber = config.switchNumberHeaters
 				id = config.switchIdHeaters
 				code = config.codeHeaters
 				stateWanted = True
-				heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+				try:
+					heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+				except:
+					increment = True
+					reason = reason + "exception in cloud.operateSwitch for Heaters"
 				if not(successfullResult):
 					increment = True
 					reason = reason + " Heater turn on Fault, "
@@ -224,14 +273,64 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 					increment = True
 					reason = reason + " Heater Switch Offline, "
 
+			if predictedTemp >= targetHp:
+
+				if hpOn : # This is a change from ON to OFF
+					hpTurnOffTime = logTime
+					hpOnTime = (hpTurnOffTime - hpTurnOnTime).total_seconds() / 60.0
+					totalHpOnTime += hpOnTime
+					increment = True
+					reason = reason + "switchNumberHphp Off,"
+					message = message + "htrs off after " + str(round(onTime,2))
+
+				switchNumber = config.switchNumberHp
+				id = config.switchIdHp
+				code = config.codeHp
+				stateWanted = False
+				try:
+					hpOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+				except:
+					increment = true
+					reason = reason + "exception in cloud.operateSwitch for Heat Pump"
+				if not(successfullResult):
+					increment = True
+					reason = reason + " HPturn off Fault, "
+					print("HP Operation Fail")
+				if offLine:
+					reason = reason + " HP Switch Offline, "
+			else:
+				if not hpOn : # This is a change from OFF to ON
+					#print("Temp < Target so turn hp ON")
+					hpTurnOnTime = logTime
+					hpOffTime = (hpTurnOnTime - hpTurnOffTime).total_seconds() / 60.0
+					increment = True
+					reason = reason + "hpON"
+					message = message + "htrs on after " + str(round(hpOffTime,2))
+				switchNumber = config.switchNumberHp
+				id = config.switchIdHp
+				code = config.codeHp
+				stateWanted = True
+				try:
+					hpOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+				except:
+					increment = true
+					reason = reason + "exception in cloud.operateSwitch for Heat Pump"
+				if not(successfullResult):
+					increment = True
+					reason = reason + " HP turn on Fault, "
+					print("HP Operation Fail")
+				if offLine:
+					increment = True
+					reason = reason + " HP Switch Offline, "
+
 		# Do Logging
 		#" Room Temp","Target Temp","heaters Status","Message"]
 		logBuffer.line_values["Hour in Day"]  =  round(hourInDay,2)
 		logBuffer.line_values["RoomTemp"]  = round(temperatures[0],2)
 		logBuffer.line_values["Per 10 Mins"] = round(changeRate*10*60/config.scan_delay,2)
 		logBuffer.line_values["Predicted Temp"] = round(predictedTemp,2)
-		logBuffer.line_values["Heaters Target Temp"]  = ########
-		logBuffer.line_values["HP Target Temp"]  = ########
+		logBuffer.line_values["Heaters Target Temp"]  = targetHeaters
+		logBuffer.line_values["HP Target Temp"]  = targetHp
 		logBuffer.line_values["HP Out"]  = round(temperatures[1],2)
 		logBuffer.line_values["Outside"]  = round(temperatures[2],2)
 		if heatersOn:
@@ -242,8 +341,8 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			logBuffer.line_values["HP Status"]  = "ON"
 		else:
 			logBuffer.line_values["HP Status"]  = "OFF"
-		logBuffer.line_values["TotalHeaters"]  = round(offTime,2)
-		logBuffer.line_values["TotalHP"]  = round(onTime,2)
+		logBuffer.line_values["TotalHeaters"]  = round(totalHeatersOnTime,2)
+		logBuffer.line_values["TotalHP"]  = round(totalHpOnTime,2)
 
 #headings = ["Hour in Day"," Room Temp","Per 10 Mins","Predicted Temp","Heaters Target Temp","HP Target Temp", \
 # "HP Out","Outside","Heaters Status","HP Status","TotalHeaters","TotalHP","Reason","Message"]
@@ -286,19 +385,41 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			except KeyboardInterrupt:
 				print(".........Ctrl+C pressed... Output Off 288")
 				print("Switching off heaters")
-				switchNumber = 0
-				id = config.switchId
-				code = "switch_1"
+				switchNumber = config.switchNumberHeaters
+				id = config.switchIdHeaters
+				code = config.codeHeaters
 				stateWanted = False
-				heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+				try:
+					heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+				except:
+					increment = True
+					reason = reason + "exception in cloud.operateSwitch for Heaters"
 				if successfullResult:
-					print("Heater Operation OK 292")
+					print("Heater Operation OK")
 				if not(heatersOn):
 					print("Heaters Off OK")
 				else:
 					print("Check Heaters")
+
+				switchNumber = config.switchNumberHp
+				id = config.switchIdHp
+				code = config.codeHp
+				stateWanted = False
+				try:
+					hpOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+				except:
+					increment = true
+					reason = reason + "exception in cloud.operateSwitch for Heat Pump"
+				if successfullResult:
+					print("HP Operation OK")
+				if not(hpOn):
+					print("HP Off OK")
+				else:
+					print("Check HP")
+
 				time_sleep(10)
 				sys_exit()
+
 			except ValueError:
 				print("sleep_Time Error value is: ",sleep_time, "loop_time: ",
 				      loop_time,"correction/1000 : ",correction/1000)
@@ -320,20 +441,43 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			correction = correction + (0.15*error)
 			# Following for looking at error correctoion
 			# print("Error correcting OK, Error : ",error,"  Correction : ", correction)
+
 	except KeyboardInterrupt:
+
 		print(".........Ctrl+C pressed... Output Off321") 
-		switchNumber = 0
-		id = config.switchId
-		code = "switch_1"
+
+		switchNumber = config.switchNumberHeaters
+		id = config.switchIdHeaters
+		code = config.codeHeaters
 		stateWanted = False
-		heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+		try:
+			heatersOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+		except:
+			print("exception in cloud.operateSwitch for Heaters")
 		if successfullResult:
 			print("Heater Operation OK 324")
 		if not(heatersOn):
 			print("Heaters Off OK")
 		else:
 			print("Check Heaters")
+
+		switchNumber = config.switchNumberHp
+		id = config.switchIdHp
+		code = config.codeHp
+		stateWanted = False
+		try:
+			hpOn, successfullResult, offLine = cloud.operateSwitch(switchNumber,id,code,stateWanted)
+		except:
+			increment = true
+			reason = reason + "exception in cloud.operateSwitch for Heat Pump"
+		if successfullResult:
+			print("HP Operation OK")
+		if not(hpOn):
+			print("HP Off OK")
+		else:
+			print("Check HP")
 		time_sleep(10)
+
 		sys_exit()
 
 	

@@ -9,9 +9,12 @@ from operator import itemgetter
 import tinytuya
 
 class class_tuyaCloud:
-	def __init__(self,numberSwitches):
+	def __init__(self,numberSwitches,names,ids,codes):
 		self.cloud = tinytuya.Cloud()  # uses tinytuya.json
 		self.lastSwitchOn = [False]*numberSwitches
+		self.ids = ids
+		self.codes = codes
+		self.names = names
 
 	def listDevices(self):
 		# Display list of devicesapiKey
@@ -31,14 +34,16 @@ class class_tuyaCloud:
 		print("Status of Device:\n", result)
 		print("\n""\n")
 
-	def operateSwitch(self,switchNumber,id,code,stateWanted):    # Send Command - Turn on switch
+	def operateSwitch(self,switchNumber,stateWanted):    # Send Command - Turn on switch
 
 		# Assume online until get bad result and offline confirmed
-		offLine = False
+		printMessage =  ""
+		reason = ""
+		opFail = False
 
 		commands = {
 			'commands': [{
-				'code': code,
+				'code': self.codes[switchNumber],
 				'value': stateWanted
 			}, {
 				'code': 'countdown_1',
@@ -46,31 +51,48 @@ class class_tuyaCloud:
 			}]
 		}
 
-		# next for debug
-		#print("will try now : ",switchNumber,id,code,stateWanted)
-		#try:
-		checkResult = self.cloud.sendcommand(id,commands)
-		#except:	
-			#print("error in 53")
-			#sys_exit()
+		try:
+			checkResult = self.cloud.sendcommand(self.ids[switchNumber],commands)
+		except:	
+			printMessage += "Cloud Send Command Fail"
+			reason += "Cloud Send Command Fail"
+			opFail = True
 
-		# next for debug
-		#print("checkResult : ",checkResult)
 		successfullResult = checkResult['success']
 		if successfullResult:
 			switchOn = stateWanted
+			self.lastSwitchOn[switchNumber] = switchOn
+			if stateWanted:
+				printMessage += " Switch on OK " + self.names[switchNumber]
+			else:
+				printMessage += " Switch off OK "+ self.names[switchNumber]
 		else:
 			# not successful so return last known state and error flag
 			switchOn = self.lastSwitchOn[switchNumber]
 			if checkResult.get('msg','device is online') == 'device is offline':
-				offLine = True
-			return switchOn, successfullResult,offLine
-
-		# So switch operation was successful so save the result
-		self.lastSwitchOn[switchNumber] = switchOn
+				opFail = True
+				reason += names[switchNumber] + " is offLine"
+			return switchOn,opFail,printMessage,reason
 
 		# return the result
-		return switchOn, successfullResult, offLine
+		return switchOn,opFail,printMessage,reason
+
+if __name__ == '__main__':
+    import sys
+    sys.exit(main(sys.argv))
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # test routine rin when script run direct
 if __name__ == '__main__':

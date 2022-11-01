@@ -40,7 +40,10 @@ class class_sensors:
 		self.sensorConfig = class_sensorConfig()
 		self.lastTemperatures = [self.sensorConfig.failDefault]*len(self.sensorConfig.cfgIds)
 		self.temperatures = [self.sensorConfig.failDefault]*len(self.sensorConfig.cfgIds)
+		# for debug
+		self.testBias = -3
 	def getTemp(self):
+		# for debu
 		sensorID = []
 		tempsFromSensors = []
 		self.temperatures = [self.sensorConfig.failDefault]*len(self.sensorConfig.cfgIds)
@@ -76,9 +79,12 @@ class class_sensors:
 					print(cfgIndex,code, "  never found")
 					self.temperatures[cfgIndex] = self.lastTemperatures[cfgIndex]
 				else:
+					print("############## Doing rounding #############")
 					# it was found during this session, 
 					self.temperatures[cfgIndex],self.lastTemperatures[cfgIndex] = \
 						round(self.lastTemperatures[cfgIndex]) + 0.12345
+					print("Last was : ", self.lastTemperatures[cfgIndex],"  This is : ",self.temperatures[cfgIndex])
+					print("\n")
 		for code in sensorID:
 			foundIndex = sensorID.index(code)
 			if code in self.sensorConfig.cfgIds:
