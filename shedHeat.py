@@ -164,17 +164,18 @@ reason = ""
 
 while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 	try:
-		while startHold:
+		#while startHold:
 		#while False:
-			logTime = datetime.now()
-			holdMin = logTime.minute
-			holdSec = logTime.second
-			if holdMin != lastHoldMin:
-				startHold = False
-				break
-			if holdSec > (lastHoldSec + 5):
-				print("Waiting for next Minute : ",(60 - holdSec))
-				lastHoldSec = holdSec
+		#	logTime = datetime.now()
+		#	holdMin = logTime.minute
+		#	holdSec = logTime.second
+		#	if holdMin != lastHoldMin:
+		#		startHold = False
+		#		break
+		#	if holdSec > (lastHoldSec + 5):
+		#		print("Waiting for next Minute : ",(60 - holdSec))
+		#		lastHoldSec = holdSec
+
 		# Sort out Time in Day and Day in week etc
 		logTime= datetime.now()
 		dayInWeek = logTime.weekday()

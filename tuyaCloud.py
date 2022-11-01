@@ -50,15 +50,18 @@ class class_tuyaCloud:
 				'value': 0
 			}]
 		}
-
+		successfullResult = False
 		try:
 			checkResult = self.cloud.sendcommand(self.ids[switchNumber],commands)
+			successfullResult = checkResult['success']
+			if checkResult.get('msg','device is online') == 'device is offline':
+				opFail = True
+				reason += names[switchNumber] + " is offLine"
 		except:	
 			printMessage += "Cloud Send Command Fail"
 			reason += "Cloud Send Command Fail"
 			opFail = True
 
-		successfullResult = checkResult['success']
 		if successfullResult:
 			switchOn = stateWanted
 			self.lastSwitchOn[switchNumber] = switchOn
@@ -69,12 +72,6 @@ class class_tuyaCloud:
 		else:
 			# not successful so return last known state and error flag
 			switchOn = self.lastSwitchOn[switchNumber]
-			if checkResult.get('msg','device is online') == 'device is offline':
-				opFail = True
-				reason += names[switchNumber] + " is offLine"
-			return switchOn,opFail,printMessage,reason
-
-		# return the result
 		return switchOn,opFail,printMessage,reason
 
 if __name__ == '__main__':
