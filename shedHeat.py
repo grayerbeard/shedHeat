@@ -122,7 +122,7 @@ if opFail:
 
 print("Heaters should be on for ten seconds")
 
-time_sleep(10)
+time_sleep(1)
 
 switchNumber = 0
 stateWanted = False

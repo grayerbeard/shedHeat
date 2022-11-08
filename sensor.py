@@ -41,7 +41,7 @@ class class_sensors:
 		self.lastTemperatures = [self.sensorConfig.failDefault]*len(self.sensorConfig.cfgIds)
 		self.temperatures = [self.sensorConfig.failDefault]*len(self.sensorConfig.cfgIds)
 		# for debug
-		self.testBias = -3
+		#self.testBias = -3
 	def getTemp(self):
 		# for debu
 		sensorID = []
@@ -50,11 +50,14 @@ class class_sensors:
 		sensors = W1ThermSensor.get_available_sensors()
 		for sensor in W1ThermSensor.get_available_sensors([Sensor.DS18B20]):
 			#get data
-			sensor.id, sensor.get_temperature()
-			sensorGet = W1ThermSensor(Sensor.DS18B20, sensor.id)
-			temp = sensorGet.get_temperature()
-			tempsFromSensors.append(temp)
-			sensorID.append(sensor.id)
+			try:
+				sensor.id, sensor.get_temperature()
+				sensorGet = W1ThermSensor(Sensor.DS18B20, sensor.id)
+				temp = sensorGet.get_temperature()
+				tempsFromSensors.append(temp)
+				sensorID.append(sensor.id)
+			except:
+				print("error trying to get sensor I'd and temp")
 
 		#scan the ids expected against those found
 		for code in self.sensorConfig.cfgIds:
@@ -71,6 +74,7 @@ class class_sensors:
 				temp = tempsFromSensors[foundIndex]	# the temperature of that sensor
 				self.temperatures[foundIndex] = temp # store in output list
 				self.lastTemperatures[foundIndex] = temp # store in last values list
+
 			else:
 				#The cfg held code was NOT found in connected codes
 				cfgIndex = self.sensorConfig.cfgIds.index(code)
@@ -81,8 +85,8 @@ class class_sensors:
 				else:
 					print("############## Doing rounding #############")
 					# it was found during this session, 
-					self.temperatures[cfgIndex],self.lastTemperatures[cfgIndex] = \
-						round(self.lastTemperatures[cfgIndex]) + 0.12345
+					self.temperatures[cfgIndex] = round(self.lastTemperatures[cfgIndex]) + 0.12345
+					self.lastTemperatures[cfgIndex] = round(self.lastTemperatures[cfgIndex]) + 0.1111
 					print("Last was : ", self.lastTemperatures[cfgIndex],"  This is : ",self.temperatures[cfgIndex])
 					print("\n")
 		for code in sensorID:
