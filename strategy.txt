@@ -1,0 +1,5 @@
+target is T
+hp on at t off at t + 1
+heaters on at t - 1. off at t
+hp on at open time - 6, heaters on at open time - 3 nñ
+T profile based on model for how fast 4kW heater could heat room based on target temp and room temp at midnight

@@ -103,8 +103,8 @@ class class_config:
 		self.ids   = config_read.get(section, 'ids').split(",")
 		self.codes = config_read.get(section, 'codes').split(",")
 		useDevices = config_read.get(section, 'useDevices').split(",")
-		self.devices = makeBoolean(useDevices)
-		print(self.names,self.ids,self.codes,self.useDevices)
+		self.useDevices = makeBoolean(useDevices)
+		#print(self.names,self.ids,self.codes,self.useDevices)
 
 
 		self.switchNumberHeaters = config_read.getint(section, 'switchNumberHeaters')
@@ -115,4 +115,5 @@ class class_config:
 		self.codeHp = config_read.get(section, 'codeHp')
 		self.useHeaters = config_read.getboolean(section, 'useHeaters' )
 		self.useHp = config_read.getboolean(section,'useHp')
+		print("Finished configHp.py")
 		return

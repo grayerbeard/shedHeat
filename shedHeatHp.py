@@ -43,14 +43,16 @@ from tuyaCloud import class_tuyaCloud
 #Set up Config file and read it in if present
 
 config = class_config()
-sys_exit()
 config.scan_count = 0
 schedule = class_schedule(config)
 
 sensor = class_sensors()
 
 numberSwitches = 2
-cloud = class_tuyaCloud(numberSwitches)
+names = ["Heaters","Heat Pump"]
+ids = ["bf5723e4b65de4a64fteqz","01303121a4e57cb7ca0c"]
+codes = ["switch_1","switch"]
+cloud = class_tuyaCloud(numberSwitches,names,ids,codes)
 
 logTime= datetime.now()
 logType = "log"
@@ -189,7 +191,7 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 		if opFail:
 			print(printMessage)
 			print("Reason : ",failReason)
-		print("Now Heat Pump should be off")
+			print("Now Heat Pump should be off")
 			sys_exit()
 		else:
 			tempChange = (temp - lastTemp)*config.scan_delay/60 # degrees per minute
