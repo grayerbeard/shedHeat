@@ -126,7 +126,7 @@ class class_text_buffer(object):
 			self.__source_ref = ref
 		else:
 			self.__source_ref = ref		
-		if len(values) > self.__width :
+		if len(values) > self.__width+1 :
 			print("Width Error for :",self.__config.prog_name, len(values) , self.__width, values)
 			sys.exit()
 		###
@@ -198,7 +198,7 @@ class class_text_buffer(object):
 
 	def pr(self,appnd,ref,logTime,refresh_interval):
 		here = "buffer.pr for " + self.__config.prog_name
-		make_values = [" -- "]*self.__width
+		make_values = [" -- "]*(self.__width+1)
 		prtime = logTime
 		for_screen = make_time_text(logTime)
 		# following alternative will show more resolution for fractions of a second

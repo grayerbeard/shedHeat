@@ -77,9 +77,9 @@ if __name__ == '__main__':
 	schedule = class_schedule(config)
 	print(config.shedDays)
 	start = 0
-	end = 16
+	end = 24
 	step = 0.25
-	for dayInWeek in range(2,3):
+	for dayInWeek in range(2,4):
 		schedule.testPrint(start,end,step,dayInWeek)
 		print("\n \n")
 	

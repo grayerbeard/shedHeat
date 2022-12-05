@@ -1,0 +1,56 @@
+ {'result': 
+		{'category': 'kt', 
+			'functions': 
+					[{'code': 'switch',
+						 'desc': '{}',
+						 'name': '开关',
+						 'type': 'Boolean', 
+							'values': '{}'
+						}, 
+					{'code': 'temp_set', 
+						'desc': '
+								{"min":16,
+								"unit":"℃",
+								"scale":0,
+								"max":86,
+								"step":1
+								}', 
+					'name': '设置温度', 
+					'type': 'Integer', 
+					'values': 
+							'{"min":16,
+								"unit":"℃",
+								"scale":0,
+								"max":86,
+								"step":1
+								}'
+						}, 
+					{'code': 'windspeed', 
+						'desc': '
+								{"range":["1","2","3"]}', 
+									'name': '档位风速', 
+									'type': 'Enum', 
+									'values': '{"range":["1","2","3"]}'
+						}, 
+					{'code': 'mode',
+						 'desc': '{"range":["cold","hot","wet","wind"]
+								}', 
+							'name': '工作模式', 
+							'type': 'Enum',
+							'values': '
+									{"range":["cold","hot","wet","wind"]}'},
+								 {'code': 'c_f', 'desc': '{"range":["C","F"]}',
+							 'name': '温标,华氏度，摄氏度切换', 
+							'type': 'Enum', 'values': '{"range":["C","F"]}'}],
+						 'status': [{'code': 'switch', 
+						'name': '开关', 'type': 'Boolean', 'values': '{}'}, 
+						{'code': 'temp_set',
+							 'name': '设置温度',
+							 'type': 'Integer', 
+								'values': '{"min":16,"unit":"℃","scale":0,"max":86,"step":1}'},
+						 {'code': 'temp_current', 'name': '当前温度',
+							 'type': 'Integer', 'values': '{"min":-9,"scale":0,"unit":"℃","max":110,"step":1}'}, 
+							{'code': 'windspeed', 'name': '档位风速', 'type': 'Enum', 'values': '{"range":["1","2","3"]}'},
+						 {'code': 'mode', 'name': '工作模式', 'type': 'Enum', 'values': '{"range":["cold","hot","wet","wind"]}'}, 
+							{'code': 'c_f', 'name': '温标,华氏度，摄氏度切换', 'type': 'Enum', 'values': '{"range":["C","F"]}'}]}, 
+							'success': True, 't': 1669917350839, 'tid': '6478763171a111edb831be74e8817213'}

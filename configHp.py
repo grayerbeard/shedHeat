@@ -101,19 +101,12 @@ class class_config:
 		self.sensorOutside = config_read.getint(section, 'sensorOutside')
 		self.names = config_read.get(section, 'names').split(",")
 		self.ids   = config_read.get(section, 'ids').split(",")
-		self.codes = config_read.get(section, 'codes').split(",")
-		useDevices = config_read.get(section, 'useDevices').split(",")
-		self.useDevices = makeBoolean(useDevices)
-		#print(self.names,self.ids,self.codes,self.useDevices)
-
-
-		self.switchNumberHeaters = config_read.getint(section, 'switchNumberHeaters')
-		self.switchIdHeaters = config_read.get(section, 'switchIdHeaters')
-		self.codeHeaters = config_read.get(section, 'codeHeaters')
-		self.switchNumberHp = config_read.getint(section, 'switchNumberHp')
-		self.switchIdHp = config_read.get(section, 'switchIdHp')
-		self.codeHp = config_read.get(section, 'codeHp')
-		self.useHeaters = config_read.getboolean(section, 'useHeaters' )
-		self.useHp = config_read.getboolean(section,'useHp')
-		print("Finished configHp.py")
+		self.codes0 = config_read.get(section, 'codes0').split(",")
+		self.values0 = config_read.get(section, 'values0').split(",")
+		self.codes1 = config_read.get(section, 'codes1').split(",")
+		self.values1 = config_read.get(section, 'values1').split(",")
+		self.deviceNumberHeaters = config_read.getint(section, 'deviceNumberHeaters')
+		self.deviceNumberHp = config_read.getint(section, 'deviceNumberHp')
+		self.deviceNumberTemp = config_read.getint(section, 'deviceNumberTemp')
 		return
+

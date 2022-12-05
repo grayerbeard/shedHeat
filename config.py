@@ -55,13 +55,15 @@ class class_config:
 		self.log_buffer_flag = True	 # whether to generate the csv log file as well as the html text file	
 		self.text_buffer_length = 30	# number of lines in the text buffer in the html file	
 	# Schedule
-		self.program0 = (5, 6,5)  # Edit Monday Times and temperatures
-		self.program1 = (5, 6,5)  # Edit Tuesday Times and temperatures
-		self.program2 = (5, 7.5,14.25, 8,14.75, 8.5,15.25, 9,15.75, 9.5,16.00, 10,16.25, 10.5,16, 15.5,5)  # Edit Wednesday Times and temperatures
-		self.program3 = (5, 7.5,14.25, 8,14.75, 8.5,15.25, 9,15.75, 9.5,16.00, 10,16.25, 10.5,16, 15.5,5)  # Edit Thursday Times and temperatures
-		self.program4 = (5, 6,5)  # Edit Friday Times and temperatures
-		self.program5 = (5, 6,5)  # Edit Saturday Times and temperatures
-		self.program6 = (5, 6,5)  # Edit Sunday Times and temperatures
+		self.shedDays = (2,3)
+		self.shedOpen = (6,17)
+		self.program0 = (0, 6,0)  # Edit Monday Times and temperatures
+		self.program1 = (0, 6,0)  # Edit Tuesday Times and temperatures
+		self.program2 = (0, 7.5,14.25, 8,14.75, 8.5,15.25, 9,15.75, 9.5,16.00, 10,16.25, 10.5,16, 15.5,0)  # Edit Wednesday Times and temperatures
+		self.program3 = (0, 7.5,14.25, 8,14.75, 8.5,15.25, 9,15.75, 9.5,16.00, 10,16.25, 10.5,16, 15.5,0)  # Edit Thursday Times and temperatures
+		self.program4 = (0, 6,0)  # Edit Friday Times and temperatures
+		self.program5 = (0, 6,0)  # Edit Saturday Times and temperatures
+		self.program6 = (0, 6,0)  # Edit Sunday Times and temperatures
 	# MeasureAndControl
 		self.hysteresis = 0.5
 		self.sensor4readings = 1
@@ -93,6 +95,8 @@ class class_config:
 		self.log_buffer_flag = config_read.getboolean(section, 'log_buffer_flag')
 		self.text_buffer_length  = int(config_read.get(section, 'text_buffer_length'))		
 		section = "Schedule"
+		self.shedDays =  config_read.get(section, 'shedDays').split(",")
+		self.shedOpen =  config_read.get(section, 'shedOpen').split(",")
 		self.program0 =  config_read.get(section, 'program0').split(",")
 		self.program1 =  config_read.get(section, 'program1').split(",")
 		self.program2 =  config_read.get(section, 'program2').split(",")
@@ -123,6 +127,13 @@ class class_config:
 		config_write.set(section, 'text_buffer_length',self.text_buffer_length)	
 		section = "Schedule"	
 		config_write.add_section(section)
+
+		shedDaysAsString  =",".join(map(str,self.program0))
+		config_write.set(section, 'shedDay',shedDaysAsString)
+
+		shedOpenAsString  =",".join(map(str,self.program0))
+		config_write.set(section, 'shedOpen',shedOpenAsString)
+
 		program0AsString  =",".join(map(str,self.program0))
 		config_write.set(section, 'program0',program0AsString)
 		program0AsString  =",".join(map(str,self.program0))

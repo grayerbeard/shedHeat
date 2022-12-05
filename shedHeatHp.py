@@ -47,12 +47,10 @@ config.scan_count = 0
 schedule = class_schedule(config)
 
 sensor = class_sensors()
-
-numberSwitches = 2
-names = ["Heaters","Heat Pump"]
-ids = ["bf5723e4b65de4a64fteqz","01303121a4e57cb7ca0c"]
-codes = ["switch_1","switch"]
-cloud = class_tuyaCloud(numberSwitches,names,ids,codes)
+names = "Heaters Switch","Heat Pump","Temp Sensor"
+ids = ["bf5723e4b65de4a64fteqz","01303121a4e57cb7ca0c",'bf6f1291cc4b30aa8d1wsv']
+codes = ["switch_1","switch","Temp"]
+cloud = class_tuyaCloud(names,ids,codes)
 
 logTime= datetime.now()
 logType = "log"
@@ -72,49 +70,52 @@ if config.scan_delay > 9:
 else:
 	refresh_time = 2*config.scan_delay
 
+heatersOn = False
+hpOn = False
+
 # Check Heaters Switch
 
-switchNumber = config.switchNumberHeaters
+switchNumber = config.deviceNumberHeaters
 stateWanted = True
-heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-if opFail:
-	print(printMessage)
-	print("Reason : ",failReason)
+#heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
+#if opFail:
+#	print(printMessage)
+#	print("Reason : ",failReason)
 
-print("Heaters should be on for ten seconds")
+#print("Heaters should be on for ten seconds")
 
-time_sleep(10)
+#time_sleep(10)
 
-switchNumber = config.switchNumberHeaters
+switchNumber = config.deviceNumberHeaters
 stateWanted = False
-heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-if opFail:
-	print(printMessage)
-	print("Reason : ",failReason)
+#heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
+#if opFail:
+#	print(printMessage)
+#	print("Reason : ",failReason)
 
-print("Now heaters should be off")
+#print("Now heaters should be off")
 
 # Check operation of Heat Pump Switch
 
-switchNumber = config.switchNumberHp
+switchNumber = config.deviceNumberHp
 stateWanted = True
-hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-if opFail:
-	print(printMessage)
-	print("Reason : ",failReason)
+#hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
+#if opFail:
+#	print(printMessage)
+#	print("Reason : ",failReason)
 
-print("Heat Pump should be on for thirty seconds")
+#print("Heat Pump should be on for thirty seconds")
 
-time_sleep(30)
+#time_sleep(30)
 
-switchNumber = config.switchNumberHp
+switchNumber = config.deviceNumberHp
 stateWanted = False
-hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-if opFail:
-	print(printMessage)
-	print("Reason : ",failReason)
+#hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
+#if opFail:
+#	print(printMessage)
+#	print("Reason : ",failReason)
 
-print("Now Heat Pump should be off")
+#print("Now Heat Pump should be off")
 
 programTemp = 0
 increment = True
@@ -124,6 +125,8 @@ lastTemp = 0
 lastDayInWeek = -1
 getTheTempError = False
 lastLogTime = logTime
+hpTurnOffTime = logTime
+heatersTurnOffTime = logTime
 predictedTemp = 0
 overRun = False
 overRunLogCount = 0
@@ -176,7 +179,7 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 
 		if temp < 0 : # No Sensor Connected
 			print("no Sensor connected will turn heaters Off")
-		switchNumber = config.switchNumberHeaters
+		switchNumber = config.deviceNumberHeaters
 		stateWanted = False
 		heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
 		if opFail:
@@ -185,7 +188,7 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 		
 		print("Now heaters should be off")
 
-		switchNumber = config.switchNumberHp
+		switchNumber = config.deviceNumberHp
 		stateWanted = False
 		hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
 		if opFail:
@@ -213,10 +216,10 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 					heatersOnTime = (heatersTurnOffTime - heatersTurnOnTime).total_seconds() / 60.0
 					totalHeatersOnTime += heatersOnTime
 					increment = True
-					reason = reason + "switchNumberHpheaters Off,"
+					reason = reason + "deviceNumberHpheaters Off,"
 					message = message + "htrs off after " + str(round(onTime,2))
 
-				switchNumber = config.switchNumberHeaters
+				switchNumber = config.deviceNumberHeaters
 				stateWanted = False
 				heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
 				if opFail:
@@ -231,7 +234,7 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 					increment = True
 					reason = reason + "heatersON"
 					message = message + "htrs on after " + str(round(heatersOffTime,2))
-				switchNumber = config.switchNumberHeaters
+				switchNumber = config.deviceNumberHeaters
 				stateWanted = True
 				heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
 				if opFail:
@@ -248,10 +251,10 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 					hpOnTime = (hpTurnOffTime - hpTurnOnTime).total_seconds() / 60.0
 					totalHpOnTime += hpOnTime
 					increment = True
-					reason = reason + "switchNumberHphp Off,"
+					reason = reason + "deviceNumberHphp Off,"
 					message = message + "htrs off after " + str(round(onTime,2))
 
-				switchNumber = config.switchNumberHp
+				switchNumber = config.deviceNumberHp
 				stateWanted = False
 				hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
 				if opFail:
@@ -267,7 +270,7 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 					increment = True
 					reason = reason + "hpON"
 					message = message + "htrs on after " + str(round(hpOffTime,2))
-				switchNumber = config.switchNumberHp
+				switchNumber = config.deviceNumberHp
 				stateWanted = True
 				hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
 				if opFail:
@@ -284,8 +287,8 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 		logBuffer.line_values["RoomTemp"]  = round(temperatures[0],2)
 		logBuffer.line_values["Per 10 Mins"] = round(changeRate*10*60/config.scan_delay,2)
 		logBuffer.line_values["Predicted Temp"] = round(predictedTemp,2)
-		logBuffer.line_values["Heaters Target Temp"]  = targetHeaters
-		logBuffer.line_values["HP Target Temp"]  = targetHp
+		logBuffer.line_values["Heaters Target Temp"]  = round(targetHeaters,2)
+		logBuffer.line_values["HP Target Temp"]  = round(targetHp,2)
 		logBuffer.line_values["HP Out"]  = round(temperatures[1],2)
 		logBuffer.line_values["Outside"]  = round(temperatures[2],2)
 		if heatersOn:
@@ -341,7 +344,7 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 				print(".........Ctrl+C pressed... Output Off 288")
 				print("Switching off heaters")
 
-				switchNumber = config.switchNumberHeaters
+				switchNumber = config.deviceNumberHeaters
 				stateWanted = False
 				heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
 				if opFail:
@@ -350,7 +353,7 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 					print("Reason : ",reason)
 				print("Now heaters should be off")
 
-				switchNumber = config.switchNumberHp
+				switchNumber = config.deviceNumberHp
 				stateWanted = False
 				hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
 				if opFail:
@@ -388,7 +391,7 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 
 		print(".........Ctrl+C pressed... Output Off321") 
 
-		switchNumber = config.switchNumberHeaters
+		switchNumber = config.deviceNumberHeaters
 		stateWanted = False
 		heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
 		if opFail:
@@ -397,7 +400,7 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 		
 		print("Now heaters should be off")
 
-		switchNumber = config.switchNumberHp
+		switchNumber = config.deviceNumberHp
 		stateWanted = False
 		hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
 		if opFail:

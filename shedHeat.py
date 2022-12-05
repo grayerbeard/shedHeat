@@ -38,7 +38,7 @@ from utility import fileexists,pr,make_time_text
 # Note use of sensor_test possible on next line
 from sensor import class_sensors
 from tuyaCloud import class_tuyaCloud
-
+THid = 'bf6f1291cc4b30aa8d1wsv'
 #Set up Config file and read it in if present
 config = class_config()
 if fileexists(config.config_filename):		
@@ -85,7 +85,7 @@ onTime = 0
 offTime = 0
 
 logType = "log"
-headings = ["Hour in Day"," Room Temp","Per 10 Mins","Predicted Temp","Target Temp","Heat Pmp Out","OutDoor","heaters Status",\
+headings = ["Hour in Day"," Room Temp","Per 10 Mins","Predicted Temp","Target Temp","Other Temp","Battery","Heat Pmp Out","OutDoor","heaters Status",\
 	"offTime","onTime","Reason","Message"]
 logBuffer = class_text_buffer(headings,config,logType,logTime)
 
@@ -205,7 +205,28 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 		
 		# Do Control
 		temperatures = sensor.getTemp()
-		temp = temperatures[config.sensor4readings]
+		#tempTH, humidity, battery = cloud.getTH(THid)
+		tempS = temperatures[config.sensor4readings]
+
+		#if
+		#		print("######",config.shedDays,config.shedOpen,"######")
+		#print(logTime.weekday(), config.shedDays, logTime.hour, config.shedOpen[0],config.shedOpen[1])
+		#shedDay = str(logTime.weekday()) in config.shedDays
+		#shedHour = int(config.shedOpen[0]) <= logTime.hour < int(config.shedOpen[1])
+		#print(shedDay,shedHour)
+
+		if (str(logTime.weekday()) in config.shedDays) and (float(config.shedOpen[0]) <= logTime.hour < float(config.shedOpen[1])):
+			message += " open  "
+			shedClosed = False 
+			tempTH, humidity, battery = cloud.getTH(THid)
+			otherTemp = tempS
+			temp = tempTH
+		else:
+			message  += " closed "
+			otherTemp = 99.99
+			battery = "not used"
+			temp = tempS
+			shedClosed = True
 		if config.scan_count < 2:
 			lastTemp = temp
 
@@ -271,15 +292,19 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 		logBuffer.line_values["Per 10 Mins"] = round(changeRate*10*60/config.scan_delay,2)
 		logBuffer.line_values["Predicted Temp"] = round(predictedTemp,2)
 		logBuffer.line_values["Target Temp"]  = round(targetTemp,2)
+		logBuffer.line_values["Other3"] = round(otherTemp)
+		logBuffer.line_values["Other4"] = battery
 		logBuffer.line_values["Other Temp1"]  = round(temperatures[1],2)
-		logBuffer.line_values["Other Temp2"]  = round(temperatures[2],2)
+		logBuffer.line_values["Other Temp2"]  = round(temperatures[2],2)	
+
 		if heatersOn:
 			logBuffer.line_values["heaters Status"]  = "ON"
 		else:
 			logBuffer.line_values["heaters Status"]  = "OFF"
 		logBuffer.line_values["offTime"]  = round(offTime,2)
 		logBuffer.line_values["onTime"]  = round(onTime,2)
-
+#"Target Temp","Other Temp","Battery","Heat Pmp Out","OutDoor","heaters Status",\
+#	"offTime","onTime","Reason","Message"]
 #headings = ["Hour in Day"," Room Temp","Per 10 Mins","Predicted Temp","Target Temp","Other Temp1","OtherTemp2","heaters Status",\
 #	"offTime","onTime","Reason","Message"]
 
@@ -314,6 +339,10 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 		
 		# Adjust the sleep time to aceive the target loop time and apply
 		# with a slow acting correction added in to gradually improve accuracy
+
+
+
+
 		if loop_time < (config.scan_delay - (correction/1000)):
 			sleep_time = config.scan_delay - loop_time - (correction/1000)
 			try:
