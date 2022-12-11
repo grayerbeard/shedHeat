@@ -81,6 +81,12 @@ def pr(flag,where,message,var_val):
 			print("debug: ", where , " : ", message, str(var_val))
 	return
 
+def prd(flag,name,value1="",value2="",value3="",value4="",value5=""):
+	# routine for debugging that prints message then a variables value
+	if flag:
+		print("Debug: ",name," ",value1," ",value2," ",value3," ",value4," ",value5)
+	return
+
 def fileexists(filename):
 	#This checks for file but does not detect disconnected sensor
 	try:

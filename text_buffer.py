@@ -1,27 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-#
-# This file is part of pwm_fanshim and is used for data logging
-# Copyright (C) 2015 Ivmech Mechatronics Ltd. <bilgi@ivmech.com>
-#
-# This is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # title           :text_buffer.py
-# description     :pwm control for R Pi Cooling Fan
+# description     :Rotating Buffer display and logging
 # author          :David Torrens
-# start date      :2019 11 20
-# version         :0.1
+# start date      :29 11 2019
+# version         :10 12 2022
 # python_version  :3
 
 # Standard library imports
@@ -31,14 +15,10 @@ from sys import exit as sys_exit
 import os
 
 ###
-# import paho.mqtt.client as mqtt
-#from time import sleep as time_sleep
-#from utility import make_time_text,fileexists
-#from datetime import datetime
-#from sys import exit as sys_exit
-
-# Third party imports
-# None
+#Tasks
+# sort out display anomolies
+# incorporate esending to influx db
+# add better top of page live data display
 
 # Local application imports
 from utility import pr,make_time_text,send_by_ftp,fileexists
@@ -306,7 +286,14 @@ class class_text_buffer(object):
 		return
 
 
-
-
-
+# test routine run when script run direct
+if __name__ == '__main__':
+	# change this to suite number of switches.
+	# one power switch and one heat pump
+	# set up the class
+	config = class_config()
+	config.scan_count = 0
+	logTime = datetime.now()
+	headings = ["hdg01""hdg02","hdg03","hdg04"]
+#	logBuffer = class_tuyaCloud(headings,config,logtype,logTime)
 

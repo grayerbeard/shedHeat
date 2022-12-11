@@ -27,8 +27,9 @@
 import numpy as np
 
 class class_schedule:
-	def __init__(self,config):
+	def __init__(self,config,baseTemp):
 		self.config = config
+		self.baseTemp = baseTemp
 
 	def calcTargets(self,hourInDay,dayInWeek):
 		shedStatus = "Closed"

@@ -27,19 +27,12 @@
 from configparser import RawConfigParser
 from csv import DictReader as csv_DictReader
 from csv import DictWriter as csv_DictWriter
-
-
-#from datetime import datetime
 from shutil import copyfile
-#from ftplib import FTP
-#from sys import argv as sys_argv
 from sys import exit as sys_exit
-#import socket
 from os import path
 from sys import argv as sys_argv
 from sys import exit as sys_exit
-
-from utility import fileexists,pr,make_time_text,makeBoolean
+from utility import fileexists,pr,prd,make_time_text,makeBoolean
 
 # Third party imports
 #from w1thermsensor import W1ThermSensor
@@ -48,27 +41,39 @@ from utility import fileexists,pr,make_time_text,makeBoolean
 #from utility import pr,make_time_text,send_by_ftp
 
 class class_config:
-	def __init__(self):
+	def __init__(self,config_filename):
 		self.prog_path = path.dirname(path.realpath(__file__)) + "/"
 		self.prog_name = str(sys_argv[0][:-3])
-		self.__config_filename = "configHp.cfg"
 		self.__default_config_filename = "configHp_default.cfg"
 		self.logType = "log" # default log type
-		print("Program Name is : ",self.prog_name)
-		print("config file is : ",self.__config_filename)
-		print("Default config file is : ",self.__default_config_filename)
+		defaultConfig = "default_" + config_filename
 		
-		if fileexists(self.__config_filename):		
-			print( "Will use : " ,self.__config_filename)
-		elif fileexists(self.__default_config_filename): 
-			print( "Will copy ",self.__default_config_filename," to ",self.__config_filename, " and use that")
-			copyfile(self.__html_filename, self.__www_filename)
+		if fileexists(config_filename):		
+			print( "Will use : " ,config_filename)
+			try:
+				copyfile("old" + defaultConfig,"older" + defaultConfig)
+				print("copied ","old" + defaultConfig," to ","older" + defaultConfig )
+			except:
+				print("noFilecalled: ","old" + defaultConfig," to copy")
+			try:
+				copyfile(defaultConfig,"old" + defaultConfig)
+				print("copied ",defaultConfig," to ","old" + defaultConfig )
+			except:
+				print("noFilecalled: ",defaultConfig," to copy")
+			try:
+				copyfile(config_filename,defaultConfig)
+				print("copied ", config_filename," to ",defaultConfig)
+			except:
+				print("noFilecalled: ",config_filename," to copy")
+		elif fileexists(defaultConfig): 
+			print("Will copy ",defaultConfig," to ",config_filename, " and use that")
+			copyfile(defaultConfig,config_filename)
 		else:
-			print("No Config File or defaultt filke must exit")
+			print(debug,"No Config File or defaultt filke must exit")
 			sys_exit()
 
 		config_read = RawConfigParser()
-		config_read.read(self.__config_filename)
+		config_read.read(config_filename)
 
 		section = "Scan"
 		self.scan_delay = float(config_read.get(section, 'scan_delay')) 
@@ -103,10 +108,39 @@ class class_config:
 		self.ids   = config_read.get(section, 'ids').split(",")
 		self.codes0 = config_read.get(section, 'codes0').split(",")
 		self.values0 = config_read.get(section, 'values0').split(",")
+		self.values0Types = config_read.get(section, 'values0Types').split(",")
 		self.codes1 = config_read.get(section, 'codes1').split(",")
 		self.values1 = config_read.get(section, 'values1').split(",")
+		self.values1Types = config_read.get(section, 'values1Types').split(",")
 		self.deviceNumberHeaters = config_read.getint(section, 'deviceNumberHeaters')
 		self.deviceNumberHp = config_read.getint(section, 'deviceNumberHp')
 		self.deviceNumberTemp = config_read.getint(section, 'deviceNumberTemp')
+		self.numberCommandSets = config_read.getint(section, 'numberCommandSets')
+		self.doTest = config_read.getboolean(section, 'doTest')
+		self.debug = config_read.getboolean(section, 'debug')
+
+
+#		New method
+		#self.tuyaTempSensorDeviceNumbers = config_read.getint(section, 'tuyaTempSensorDeviceNumbers')
+		#self.tuyaTempSensorNames = config_read.get(section, 'tuyaTempSensorNames').split(",")
+		#self.gotCodes = config_read.get(section,'codes').split("#")
+		#prd(debug,"self.gotCodes  ",self.gotCodes)
+		#sys_exit()
+		#self.codes = [{}]*self.numberDevices
+		#self.codes  = []
+		#for ind in self.gotCodes:
+		#	self.codes.append(setCodes)
+		#self.gotValues = config_read.get(section, 'values').split("#")
+		#self.values  = []
+		#for setValues in self.gotValues:
+		#	self.values.append(setValues)
+		#self.gotValuesTypes = config_read.get(section, 'valuesTypes').split("#")
+		#self.valuesTypes  = []
+		#for setValuesTypes in self.gotValuesTypes:
+		#	self.valuesTypes.append(setValuesTypes)
+
+		prd(self.debug,"Program Name is : ",self.prog_name)
+		prd(self.debug,"config file is : ",config_filename)
+		prd(self.debug,"Default config file is : ",defaultConfig)
 		return
 

@@ -29,6 +29,7 @@ from datetime import datetime
 from sys import exit as sys_exit
 from subprocess import call
 import numpy as np
+import json
 
 # Third party imports
 # None
@@ -36,26 +37,35 @@ import numpy as np
 from configHp import class_config
 from schedule import class_schedule
 from text_buffer import class_text_buffer
-from utility import fileexists,pr,make_time_text
+from utility import prd as debugPrint
 # Note use of sensor_test possible on next line
 from sensor import class_sensors
 from tuyaCloud import class_tuyaCloud
 #Set up Config file and read it in if present
 
-config = class_config()
+
+
+config = class_config("configHp.cfg")
+dHp = config.deviceNumberHp
+dHtrs = config.deviceNumberHeaters
+dTemp = config.deviceNumberTemp
+debug = config.debug
+
 config.scan_count = 0
-schedule = class_schedule(config)
+baseHeat = 5
+schedule = class_schedule(config,baseHeat)
 
 sensor = class_sensors()
-names = "Heaters Switch","Heat Pump","Temp Sensor"
-ids = ["bf5723e4b65de4a64fteqz","01303121a4e57cb7ca0c",'bf6f1291cc4b30aa8d1wsv']
-codes = ["switch_1","switch","Temp"]
-cloud = class_tuyaCloud(names,ids,codes)
+cloud = class_tuyaCloud(config)
 
 logTime= datetime.now()
+heatersTurnOnTime = logTime
+heatersTurnOffTime = logTime
+hpTurnOnTime  = logTime
+hpTurnOffTime = logTime
 logType = "log"
-headings = ["Hour in Day","Room Temp","Per 10 Mins","Predicted Temp","Heaters Target Temp","HP Target Temp", \
-			"HP Out","Outside","Heaters Status","HP Status","TotalHeaters","TotalHP","Reason","Message"]
+headings = ["Hour in Day","Room Temp","Battery","Per 10 Mins","Predicted Temp","Heaters Target Temp","HP Target Temp", \
+			"HP Out","Other Temp","Outside","Heaters Status","HP Status","TotalHeaters","TotalHP","Reason","Message"]
 logBuffer = class_text_buffer(headings,config,logType,logTime)
 
 
@@ -64,58 +74,119 @@ the_end_time = datetime.now()
 loop_time = 0
 correction = 7.5
 # Ensure start right by inc buffer
-buffer_increment_flag = False
+
 if config.scan_delay > 9:
 	refresh_time = config.scan_delay
 else:
 	refresh_time = 2*config.scan_delay
 
-heatersOn = False
-hpOn = False
-
 # Check Heaters Switch
 
-switchNumber = config.deviceNumberHeaters
-stateWanted = True
-#heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-#if opFail:
-#	print(printMessage)
-#	print("Reason : ",failReason)
+#print( "\n\n","Status at start : ",json.dumps(cloud.devicesStatus[dHtrs]), "\n\n")
 
-#print("Heaters should be on for ten seconds")
+if config.doTest:
+	print(json.dumps(cloud.devicesStatus,indent = 4))
+	print("Heater: ",cloud.devicesStatus[dHtrs]["switch_1"])
+	if cloud.amendCommands(dHtrs,"switch_1",'True'): # Check if worked
+		success,stSuccess,failReason = cloud.upDateDevice(dHtrs)
+		if success:
+			print("Heaters should be on for five seconds")
+		else:
+			print( success,stSuccess,failReason)
+	else: # Print failed and stop
+		print ("amend command failed 95")
+		sys_exit()
+	
+	stSuccess,failReason,devicesStatus,excRep = cloud.getStatus()
+	if len(excRep) > 0:
+		print(excRep)
+		reason += excRep[0]
 
-#time_sleep(10)
+	if stSuccess:
+		print( "\n\n","Status at after switch on : ",json.dumps(cloud.devicesStatus), "\n\n")
+	else:
+		print(stSuccess,reason)
 
-switchNumber = config.deviceNumberHeaters
-stateWanted = False
-#heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-#if opFail:
-#	print(printMessage)
-#	print("Reason : ",failReason)
+	print("Heaters should be on for ten Seconds")
+	print("Heater: ",cloud.devicesStatus[dHtrs]["switch_1"])
 
-#print("Now heaters should be off")
+	time_sleep(2)
+	
+	if cloud.amendCommands(dHtrs,"switch_1",'False'): # Check if worked
 
-# Check operation of Heat Pump Switch
+		success,stSuccess,failReason = cloud.upDateDevice(dHtrs)
+		#print( success,stSuccess,failReason)
+		if success:
+			print("Now heaters should be off")
+		else:
+			print( success,stSuccess,failReason)
+	else: # Print failed and stop
+		print ("amend command failed 101")
+		sys_exit()
 
-switchNumber = config.deviceNumberHp
-stateWanted = True
-#hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-#if opFail:
-#	print(printMessage)
-#	print("Reason : ",failReason)
 
-#print("Heat Pump should be on for thirty seconds")
+	stSuccess,failReason,devicesStatus,excRep = cloud.getStatus()
+	if len(excRep) > 0:
+		print(excRep)
+		reason += excRep[0]
+	if stSuccess:
+		print( "\n\n","AfterdHtr Switch Off : ",json.dumps(cloud.devicesStatus), "\n\n")
+	else:
+		print(stSuccess,failReason)
 
-#time_sleep(30)
+	print("Heater: ",cloud.devicesStatus[dHtrs]["switch_1"])
 
-switchNumber = config.deviceNumberHp
-stateWanted = False
-#hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-#if opFail:
-#	print(printMessage)
-#	print("Reason : ",failReason)
+	#sys_exit()
 
-#print("Now Heat Pump should be off")
+	
+	# Check operation of Heat Pump Switch
+	
+	if cloud.amendCommands(dHp,"switch",'True'):
+		success,stSuccess,failReason = cloud.upDateDevice(dHp)
+		if success:
+			print( "Heat Pump should be on for 10 seconds")
+		else:
+			print( success,stSuccess,failReason)
+	else: # Print failed and stop
+		print ("amend command failed 113")
+		sys_exit()
+
+	stSuccess,failReason,devicesStatus,excRep = cloud.getStatus()
+	if len(excRep) > 0:
+		print(excRep)
+		reason += excRep[0]
+	if stSuccess:
+		print( "\n\n","After dHp Switch On : ",json.dumps(cloud.devicesStatus), "\n\n")
+	else:
+		print(stSuccess,failReason)
+
+	time_sleep(10)
+	
+	
+	if cloud.amendCommands(dHp,"switch", 'False'):
+		success,stSuccess,failReason = cloud.upDateDevice(dHp)
+		#
+		if success:
+			print( "Now Heat Pump should be off")
+		else:
+			print( success,stSuccess,failReason)
+	else: # Print failed and stop
+		print ("amend command failed 113")
+		sys_exit()
+
+	stSuccess,failReason,devicesStatus,excRep = cloud.getStatus()
+	if len(excRep) > 0:
+		print(excRep)
+		reason += excRep[0]
+	if stSuccess:
+		print( "\n\n","After dHp Switch Off : ",json.dumps(cloud.devicesStatus), "\n\n")
+	else:
+		print(stSuccess,failReason)
+		sys_exit()
+
+if config.doTest:
+	print("Test Completed, will stop")	
+	sys_exit()
 
 programTemp = 0
 increment = True
@@ -151,156 +222,196 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 		dayInWeek = logTime.weekday()
 		hourInDay = logTime.hour + (logTime.minute/60)
 		shedStatus,desiredTemp,targetHp,targetHeaters = schedule.calcTargets(hourInDay,dayInWeek)
-		message = message + shedStatus
+		message += shedStatus
 		if dayInWeek != lastDayInWeek:
 			totalHeatersOnTime = 0
 			totalHpOnTime = 0
 
 		if targetHeaters != 0:
-			if heatersOn:
+			if cloud.devicesStatus[dHtrs]["switch_1"]:
 				targetHeaters += config.hysteresis
 			else:
 				targetHeaters -= config.hysteresis
 
 		if targetHp != 0:	
-			if hpOn:
+			if cloud.devicesStatus[dHp]["switch"]:
 				targetHp += config.hysteresis
 			else:
 				targetHp -= config.hysteresis
 		
 		# Do Control
 		startGetTemp = datetime.now()
-		temperatures = sensor.getTemp()
-		getTempTime = round((datetime.now()- startGetTemp).total_seconds(),2)
-		print(f'Time taken get temperatures is {getTempTime}')
+		temperatures,excRep,numberFound = sensor.getTemp()
+		if len(excRep) > 0:
+			reason += excRep[0]
+			print(excRep)
+		stSuccess,failReason,devicesStatus,excRep = cloud.getStatus()
+		if len(excRep) > 0:
+			print(excRep)
+			reason += excRep[0]
+		if stSuccess[dTemp]:
+			#print(json.dumps(devicesStatus[dTemp],indent = 4))
+			tempTH = devicesStatus[dTemp]["va_temperature"]/10
+			humidity = devicesStatus[dTemp]["va_humidity"]
+			battery = devicesStatus[dTemp]["battery_state"]
+		else:
+			print("failReason: ",failReason)
+			print("no temp date")
+			sys_exit()
+
+		otherTemp = tempTH
+
 		temp = temperatures[config.sensorRoomTemp]
+
 		if config.scan_count < 2:
 			lastTemp = temp
 
+
+		if type(temp) != type(1.1):
+			temp = -1
+			print("Temperature reading not a float")
+
 		if temp < 0 : # No Sensor Connected
 			print("no Sensor connected will turn heaters Off")
-		switchNumber = config.deviceNumberHeaters
-		stateWanted = False
-		heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-		if opFail:
-			print(printMessage)
-			print("Reason : ",failReason)
-		
-		print("Now heaters should be off")
 
-		switchNumber = config.deviceNumberHp
-		stateWanted = False
-		hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-		if opFail:
-			print(printMessage)
-			print("Reason : ",failReason)
-			print("Now Heat Pump should be off")
+			if cloud.amendCommands(dHtrs,"switch_1",'False'):
+				success,stSuccess,failReason = cloud.upDateDevice(dHtrs)
+				#print( success,stSuccess,failReason)
+				if not(success):
+					print("Reason : ",failReason)
+				print("Now heaters should be off")
+			else:
+				print("amend command fault")
+	
+			if cloud.amendCommands(dHp,"switch",'False'):
+				success,stSuccess,failReason = cloud.upDateDevice(dHp)
+				#print( success,stSuccess,failReason)
+				if not(success):
+					print("Reason : ",failReason)
+				print("Now HP should be off")
+			else:
+				print("amend command fault")
 			sys_exit()
 		else:
 			tempChange = (temp - lastTemp)*config.scan_delay/60 # degrees per minute
 			changeRate = changeRate + (0.1 * (tempChange - changeRate))
 			if abs(changeRate) * 3 > 2:
 				changeRate = changeRate * 0.95
-				message = message + " RR" + str(round(changeRate,3)) + ", "
-				print("changeRate reduced : ",changeRate)
+				message += " RR" + str(round(changeRate,3)) + ", "
+				#print( "changeRate reduced : ",changeRate)
 				increment = True
-				reason = reason + "ChangeRateReduced"
+				reason += "01ChangeRateReduced"
+				print("Reason: ",reason)
 				
 			predictedTemp = temp + (3 * changeRate)
 			lastTemp = temp
-			
-			if predictedTemp >= targetHeaters:
 
-				if heatersOn : # This is a change from ON to OFF
+			if predictedTemp >= targetHeaters:
+				#print("Heater Status: ",cloud.devicesStatus[dHtrs]["switch_1"])
+				#print("Heaters predictedTemp and targetHeaters heater OFF? : ",predictedTemp,targetHeaters)
+
+				if cloud.devicesStatus[dHtrs]["switch_1"] : # This is a change from ON to OFF
 					heatersTurnOffTime = logTime
 					heatersOnTime = (heatersTurnOffTime - heatersTurnOnTime).total_seconds() / 60.0
 					totalHeatersOnTime += heatersOnTime
 					increment = True
-					reason = reason + "deviceNumberHpheaters Off,"
-					message = message + "htrs off after " + str(round(onTime,2))
+					reason += "02deviceNumberHpheaters Off,"
+					print("Reason: ",reason)
+					message += "htrs off after " + str(round(heatersOnTime,2))
 
-				switchNumber = config.deviceNumberHeaters
-				stateWanted = False
-				heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-				if opFail:
-					increment = True
-					reason = reason + failReason
-					print(printMessage)
+				if cloud.amendCommands(dHtrs,"switch_1",'False'):
+					success,stSuccess,failReason = cloud.upDateDevice(dHtrs)
+					if not(success and stSuccess):
+						increment = True
+						reason += failReason + " ##6 "
+						print("Reason: ",reason)
+				else:
+					print("amend command fault")
 			else:
-				if not heatersOn : # This is a change from OFF to ON
+				print("Heater Status: ",cloud.devicesStatus[dHtrs]["switch_1"])
+				print("Heaters predictedTemp and targetHeaters heater Off? : ",predictedTemp,targetHeaters)
+				if not cloud.devicesStatus[dHtrs]["switch_1"]  : # This is a change from OFF to ON
 					#print("Temp < Target so turn heaters ON")
 					heatersTurnOnTime = logTime
 					heatersOffTime = (heatersTurnOnTime - heatersTurnOffTime).total_seconds() / 60.0
 					increment = True
-					reason = reason + "heatersON"
-					message = message + "htrs on after " + str(round(heatersOffTime,2))
-				switchNumber = config.deviceNumberHeaters
-				stateWanted = True
-				heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-				if opFail:
-					increment = True
-					reason = reason + failReason
-					print(printMessage)				
+					reason += "03heatersON"
+					print("Reason: ",reason)
+					message += "htrs on after " + str(round(heatersOffTime,2))
 
-
+				if cloud.amendCommands(dHtrs,"switch_1",'True'):
+					success,stSuccess,failReason = cloud.upDateDevice(dHtrs)
+					if not(success and stSuccess):
+						increment = True
+						reason += failReason + " ##7 "
+						print("Reason: ",reason)
+				else:
+					print("amend command fault")
 
 			if predictedTemp >= targetHp:
 
-				if hpOn : # This is a change from ON to OFF
+				if cloud.devicesStatus[dHp]["switch"] : # This is a change from ON to OFF
 					hpTurnOffTime = logTime
 					hpOnTime = (hpTurnOffTime - hpTurnOnTime).total_seconds() / 60.0
 					totalHpOnTime += hpOnTime
 					increment = True
-					reason = reason + "deviceNumberHphp Off,"
-					message = message + "htrs off after " + str(round(onTime,2))
+					reason += "04deviceNumberHphp Off,"
+					print("Reason: ",reason)
+					message += "05HP off after " + str(round(hpOnTime,2))
 
-				switchNumber = config.deviceNumberHp
-				stateWanted = False
-				hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-				if opFail:
-					increment = True
-					reason = reason + failReason
-					print(printMessage)
-					print("Reason : ",reason)
+				if cloud.amendCommands(dHp,"switch",'False'):
+					success,stSuccess,failReason = cloud.upDateDevice(dHp)
+					if not(success and stSuccess):
+						increment = True
+						reason += failReason + " ##8 "
+						print("Reason : ",reason)
+				else:
+					print("amend command fault")
 			else:
-				if not hpOn : # This is a change from OFF to ON
+				if not cloud.devicesStatus[dHp]["switch"] : # This is a change from OFF to ON
 					#print("Temp < Target so turn hp ON")
 					hpTurnOnTime = logTime
 					hpOffTime = (hpTurnOnTime - hpTurnOffTime).total_seconds() / 60.0
 					increment = True
-					reason = reason + "hpON"
-					message = message + "htrs on after " + str(round(hpOffTime,2))
-				switchNumber = config.deviceNumberHp
-				stateWanted = True
-				hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-				if opFail:
-					increment = True
-					reason = reason + failReason
-					print(printMessage)
-					print("Reason : ",reason)
+					reason += "hpON"
+					print("Reason: ",reason)
+					message += "htrs on after " + str(round(hpOffTime,2))
+				if cloud.amendCommands(dHp,"switch",'True'):
+					success,stSuccess,failReason = cloud.upDateDevice(dHp)
+					if not(success and stSuccess):
+						increment = True
+						reason += failReason  + " ##9 "
+						print("Reason: ",reason)
+				else:
+					print("amend command fault")
 
 
 
 		# Do Logging
 		#" Room Temp","Target Temp","heaters Status","Message"]
-		logBuffer.line_values["Hour in Day"]  =  round(hourInDay,2)
-		logBuffer.line_values["RoomTemp"]  = round(temperatures[0],2)
+		logBuffer.line_values["Hour in Day"] =  round(hourInDay,2)
+		logBuffer.line_values["RoomTemp"] = round(tempTH,2)
+		logBuffer.line_values["Battery"] = battery
 		logBuffer.line_values["Per 10 Mins"] = round(changeRate*10*60/config.scan_delay,2)
 		logBuffer.line_values["Predicted Temp"] = round(predictedTemp,2)
-		logBuffer.line_values["Heaters Target Temp"]  = round(targetHeaters,2)
-		logBuffer.line_values["HP Target Temp"]  = round(targetHp,2)
-		logBuffer.line_values["HP Out"]  = round(temperatures[1],2)
-		logBuffer.line_values["Outside"]  = round(temperatures[2],2)
-		if heatersOn:
-			logBuffer.line_values["Heaters Status"]  = "ON"
+		logBuffer.line_values["Heaters Target Temp"] = round(targetHeaters,2)
+		logBuffer.line_values["HP Target Temp"] = round(targetHp,2)
+		logBuffer.line_values["HP Out"] = round(temperatures[config.sensorHpOut],2)
+		logBuffer.line_values["Other Temp"] = round(temperatures[config.sensorRoomTemp],2)
+		logBuffer.line_values["Outside"] = round(temperatures[config.sensorOutside],2)
+		
+		if cloud.devicesStatus[dHtrs]["switch_1"]:
+			logBuffer.line_values["Heaters Status"] = "ON"
 		else:
-			logBuffer.line_values["heaters Status"]  = "OFF"
-		if hpOn:
-			logBuffer.line_values["HP Status"]  = "ON"
+			logBuffer.line_values["Heaters Status"] = "OFF"
+		#print("Heaters Status: ",logBuffer.line_values["Heaters Status"],"\n",cloud.devicesStatus[dHtrs],"\n")
+		if cloud.devicesStatus[dHp]["switch"]:
+			logBuffer.line_values["HP Status"] = "ON"
 		else:
-			logBuffer.line_values["HP Status"]  = "OFF"
-		logBuffer.line_values["TotalHeaters"]  = round(totalHeatersOnTime,2)
-		logBuffer.line_values["TotalHP"]  = round(totalHpOnTime,2)
+			logBuffer.line_values["HP Status"] = "OFF"
+		#print("Heaters status :",logBuffer.line_values["HP Status"],"\n",cloud.devicesStatus[dHp],"\n")
+		logBuffer.line_values["TotalHeaters"] = round(totalHeatersOnTime,2)
+		logBuffer.line_values["TotalHP"] = round(totalHpOnTime,2)
 
 #headings = ["Hour in Day"," Room Temp","Per 10 Mins","Predicted Temp","Heaters Target Temp","HP Target Temp", \
 # "HP Out","Outside","Heaters Status","HP Status","TotalHeaters","TotalHP","Reason","Message"]
@@ -312,14 +423,17 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			lastLogTime = logTime
 			
 			increment = True
-			reason = reason + " MustLog, "
+			reason += " MustLog, "
+			print(reason)
 			
 		if (config.scan_count < 5): 
 			increment = True
-			reason = reason + "start,"
+			reason += "start,"
+			debugPrint(debug,"Reason: ",reason)
 
-		logBuffer.line_values["Reason"]  = reason
-		logBuffer.line_values["Message"]  = message
+
+		logBuffer.line_values["Reason"] = reason
+		logBuffer.line_values["Message"] = message
 
 		#next for debug
 		#print("count : ",config.scan_count," Increment : ",increment)
@@ -344,23 +458,25 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 				print(".........Ctrl+C pressed... Output Off 288")
 				print("Switching off heaters")
 
-				switchNumber = config.deviceNumberHeaters
-				stateWanted = False
-				heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-				if opFail:
-					reason = reason + failReason
-					print(printMessage)
-					print("Reason : ",reason)
-				print("Now heaters should be off")
+				commands = {"commands": {"code": "switch_1", "value": false}}
 
-				switchNumber = config.deviceNumberHp
-				stateWanted = False
-				hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-				if opFail:
-					reason = reason + failReason
-					print(printMessage)
-					print("Reason : ",reason)
-				print("Now Heat Pump should be off")
+				if cloud.amendCommands(dHtrs,"switch_1",'False'):
+					success,stSuccess,failReason = cloud.upDateDevice(dHtrs)
+					if not(success and stSuccess):
+						reason += failReason + " ##10 "
+						print("Reason : ",reason)
+					print("Now heaters should be off")
+				else:
+					print("amend command fault")
+	
+				if cloud.amendCommands(dHp,"switch",'False'):
+					success,stSuccess,failReason = cloud.upDateDevice(dHp)
+					if not(success and stSuccess):
+						reason += failReason + " ##11 "
+						print("Reason : ",reason)
+					print("Now Heat Pump should be off")
+				else:
+					print("amend command fault")
 
 				time_sleep(10)
 				sys_exit()
@@ -391,22 +507,22 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 
 		print(".........Ctrl+C pressed... Output Off321") 
 
-		switchNumber = config.deviceNumberHeaters
-		stateWanted = False
-		heatersOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-		if opFail:
-			print(printMessage)
-			print("Reason : ",failReason)
-		
-		print("Now heaters should be off")
+		if cloud.amendCommands(dHtrs,"switch_1",'False'):
+			success,stSuccess,failReason = cloud.upDateDevice(dHtrs)
+			if not(success and stSuccess):
+				print("Reason : ",failReason)
+			
+			print("Now heaters should be off")
+		else:
+			print("amend command fault")
 
-		switchNumber = config.deviceNumberHp
-		stateWanted = False
-		hpOn, opFail,printMessage,failReason = cloud.operateSwitch(switchNumber,stateWanted)
-		if opFail:
-			print(printMessage)
-			print("Reason : ",failReason)
-		print("Now Heat Pump should be off")
+		if cloud.amendCommands(dHp,"switch",'False'):
+			success,stSuccess,failReason = cloud.upDateDevice(dHp)
+			if not(success and stSuccess):
+				print("Reason : ",failReason)
+			print("Now Heat Pump should be off")
+		else:
+			print("amend command fault")
 
 		time_sleep(10)
 

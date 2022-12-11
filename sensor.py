@@ -33,6 +33,8 @@ from utility import fileexists
 from sensorConfig import class_sensorConfig
 from time import sleep as time_sleep
 from datetime import datetime
+from inspect import currentframe as cf
+from inspect import getframeinfo as gf
 
 class class_sensors:
 	def __init__(self):
@@ -48,24 +50,36 @@ class class_sensors:
 		tempsFromSensors = []
 		self.temperatures = [self.sensorConfig.failDefault]*len(self.sensorConfig.cfgIds)
 		sensors = W1ThermSensor.get_available_sensors()
+		excRep = []
+		numberFound = 0
 		for sensor in W1ThermSensor.get_available_sensors([Sensor.DS18B20]):
 			#get data
 			try:
+				finfo = gf(cf())
 				sensor.id, sensor.get_temperature()
 				sensorGet = W1ThermSensor(Sensor.DS18B20, sensor.id)
 				temp = sensorGet.get_temperature()
 				tempsFromSensors.append(temp)
 				sensorID.append(sensor.id)
-			except:
-				print("error trying to get sensor I'd and temp")
+			except Exception as err:
+				exc = (finfo.filename,str(finfo.lineno),str(type(err))[8:-2],str(err))
+				excRep.append(exc)
+				print(exc)
 
 		#scan the ids expected against those found
 		for code in self.sensorConfig.cfgIds:
-			try:
-				foundIndex = sensorID.index(code) # position of cfg file code in list of found codes
-				found = True
-			except:
-				# the cfg Id was not found
+			if code != '0315a80584ff':				
+				try:
+					finfo = gf(cf())
+					foundIndex = sensorID.index(code) # position of cfg file code in list of found codes
+					found = True
+				except Exception as err:
+					exc = (finfo.filename,str(finfo.lineno),str(type(err))[8:-2],str(err))
+					excRep.append(exc)
+					print(exc)
+					# the cfg Id was not found
+					found = False
+			else:
 				found = False
 			if (code in sensorID) and found:
 				#we found a code in cfg amongst read in values
@@ -74,13 +88,14 @@ class class_sensors:
 				temp = tempsFromSensors[foundIndex]	# the temperature of that sensor
 				self.temperatures[foundIndex] = temp # store in output list
 				self.lastTemperatures[foundIndex] = temp # store in last values list
+				numberFound += 1
 
 			else:
 				#The cfg held code was NOT found in connected codes
 				cfgIndex = self.sensorConfig.cfgIds.index(code)
-				print(cfgIndex,code, "  not found this time")
+				#print(cfgIndex,code, "  not found this time")
 				if self.lastTemperatures[cfgIndex] == self.sensorConfig.failDefault:
-					print(cfgIndex,code, "  never found")
+					#print(cfgIndex,code, "  never found")
 					self.temperatures[cfgIndex] = self.lastTemperatures[cfgIndex]
 				else:
 					print("############## Doing rounding #############")
@@ -102,9 +117,10 @@ class class_sensors:
 				self.sensorConfig.cfgIds.append(code)
 				self.temperatures.append(tempsFromSensors[foundIndex])
 				self.lastTemperatures.append(tempsFromSensors[foundIndex])
+				numberFound += 1
 		if self.sensorConfig.newConfigFileNeeded:
 			self.sensorConfig.write_file()
-		return self.temperatures
+		return self.temperatures,excRep,numberFound
 
 if __name__ == '__main__':
 
@@ -120,17 +136,29 @@ if __name__ == '__main__':
 	#	print("New Config File Made with default values, you probably need to edit it")
 	sensor = class_sensors()
 	print("Sensor Class set up")
-	print("\n")
 	lastTime = datetime.now()
-	limit = 0
+	limit = 6000
 	count = 0
+	pat = 50
+	startTime = datetime.now()
 	while (count<limit) or (limit == 0):
-		temperatures = sensor.getTemp()
-		thisTime = datetime.now()
-		cycleTime = round((thisTime - lastTime).total_seconds(),2)
-		lastTime = thisTime
-		for index in range(len(sensor.sensorConfig.cfgIds)):
-			print(count,cycleTime,index+1,sensor.sensorConfig.cfgIds[index],temperatures[index])
-		print ("\n")
+		temperatures,excRep,numberFound = sensor.getTemp()
+		if len(excRep) > 0:
+			print("Error: ",excRep,"\n","Temperatures: ",temperatures)
+		elif numberFound != 2:
+			print("numberFound: ",numberFound, temperatures)
+#		thisTime = datetime.now()
+#		cycleTime = round((thisTime - lastTime).total_seconds(),2)
+#		lastTime = thisTime
+#		for index in range(len(sensor.sensorConfig.cfgIds)):
+#			print(count,cycleTime,index+1,sensor.sensorConfig.cfgIds[index],temperatures[index])
+#		print ("\n")count/pat
+		#print("\n",count)
+		#print(int(round((count/pat),0)),count/pat)
 		count+=1
+		if int(round((count/pat),0)) == count/pat:
+			print("Done: ",count, " of ", limit," After: ", \
+			round(((datetime.now() - startTime).total_seconds())/60,2)," minutes.  ",temperatures)
+
+
 
