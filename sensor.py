@@ -45,81 +45,97 @@ class class_sensors:
 		# for debug
 		#self.testBias = -3
 	def getTemp(self):
-		# for debu
-		sensorID = []
-		tempsFromSensors = []
-		self.temperatures = [self.sensorConfig.failDefault]*len(self.sensorConfig.cfgIds)
-		sensors = W1ThermSensor.get_available_sensors()
+
+		#set up an empt list for error reporting
 		excRep = []
+
+		#set up an empty list for sensor IDs
+		sensorID = []
+
+		#set up and empty list for readings found
+		tempsFromSensors = []
+
+		# Put default values incase not able to get a new value 
+		self.temperatures = [self.sensorConfig.failDefault]*len(self.sensorConfig.cfgIds)
+
+		# set up to read in sensors
+		# this could be in any order
+		# this could miss expeccted sensors
+		# this could include unexpected new sensors
+		# code below allows for all these possibilities
+		sensors = W1ThermSensor.get_available_sensors()
+
 		numberFound = 0
-		for sensor in W1ThermSensor.get_available_sensors([Sensor.DS18B20]):
-			#get data
-			try:
+		try:
+			finfo = gf(cf())
+			# scan through sensors available and read into the list "tempsFromSensors"	
+			for sensor in W1ThermSensor.get_available_sensors([Sensor.DS18B20]):
+				#get data
 				finfo = gf(cf())
 				sensor.id, sensor.get_temperature()
 				sensorGet = W1ThermSensor(Sensor.DS18B20, sensor.id)
 				temp = sensorGet.get_temperature()
 				tempsFromSensors.append(temp)
 				sensorID.append(sensor.id)
-			except Exception as err:
-				exc = (finfo.filename,str(finfo.lineno),str(type(err))[8:-2],str(err))
-				excRep.append(exc)
-				print(exc)
 
-		#scan the ids expected against those found
-		for code in self.sensorConfig.cfgIds:
-			if code != '0315a80584ff':				
-				try:
-					finfo = gf(cf())
+			#scan the ids expected against those found
+			finfo = gf(cf())
+			for code in self.sensorConfig.cfgIds:
+				found = False
+				if code != '0315a80584ff':				
 					foundIndex = sensorID.index(code) # position of cfg file code in list of found codes
 					found = True
-				except Exception as err:
-					exc = (finfo.filename,str(finfo.lineno),str(type(err))[8:-2],str(err))
-					excRep.append(exc)
-					print(exc)
-					# the cfg Id was not found
-					found = False
-			else:
-				found = False
-			if (code in sensorID) and found:
-				#we found a code in cfg amongst read in values
-				#find this codes position in our cfg list
-				cfgIndex = self.sensorConfig.cfgIds.index(code)
-				temp = tempsFromSensors[foundIndex]	# the temperature of that sensor
-				self.temperatures[foundIndex] = temp # store in output list
-				self.lastTemperatures[foundIndex] = temp # store in last values list
-				numberFound += 1
-
-			else:
-				#The cfg held code was NOT found in connected codes
-				cfgIndex = self.sensorConfig.cfgIds.index(code)
-				#print(cfgIndex,code, "  not found this time")
-				if self.lastTemperatures[cfgIndex] == self.sensorConfig.failDefault:
-					#print(cfgIndex,code, "  never found")
-					self.temperatures[cfgIndex] = self.lastTemperatures[cfgIndex]
 				else:
-					print("############## Doing rounding #############")
-					# it was found during this session, 
-					self.temperatures[cfgIndex] = round(self.lastTemperatures[cfgIndex]) + 0.12345
-					self.lastTemperatures[cfgIndex] = round(self.lastTemperatures[cfgIndex]) + 0.1111
-					print("Last was : ", self.lastTemperatures[cfgIndex],"  This is : ",self.temperatures[cfgIndex])
-					print("\n")
-		for code in sensorID:
-			foundIndex = sensorID.index(code)
-			if code in self.sensorConfig.cfgIds:
-				cfgIdsIndex = self.sensorConfig.cfgIds.index(code)
-				#print("This existing code : ",cfgIdsIndex,code,"  was found")
-				# no additional action needed we have already stoored the temperature in "temperatures" list.
-			else:
-				#this is a new code and must be added to the list
-				cfgIndex = len(self.sensorConfig.cfgIds) + 1 # one more than was there before
-				self.sensorConfig.newConfigFileNeeded = True
-				self.sensorConfig.cfgIds.append(code)
-				self.temperatures.append(tempsFromSensors[foundIndex])
-				self.lastTemperatures.append(tempsFromSensors[foundIndex])
-				numberFound += 1
-		if self.sensorConfig.newConfigFileNeeded:
-			self.sensorConfig.write_file()
+					found = False
+				if (code in sensorID) and found:
+					#we found a code in cfg amongst read in values
+					#find this codes position in our cfg list
+					cfgIndex = self.sensorConfig.cfgIds.index(code)
+					temp = tempsFromSensors[foundIndex]	# the temperature of that sensor
+					temp = tempsFromSensors[foundIndex]	# the temperature of that sensor
+					self.temperatures[foundIndex] = temp # store in output list
+					self.lastTemperatures[foundIndex] = temp # store in last values list
+					numberFound += 1
+				else:
+					#The code from sensors.cfg was NOT found in connected codes
+					cfgIndex = self.sensorConfig.cfgIds.index(code)
+					#print(cfgIndex,code, "  not found this time")
+					if self.lastTemperatures[cfgIndex] == self.sensorConfig.failDefault:
+						#print(cfgIndex,code, "  never found")
+						self.temperatures[cfgIndex] = self.lastTemperatures[cfgIndex]
+					else:
+						print("############## Doing rounding #############")
+						# it was found during this session, 
+						self.temperatures[cfgIndex] = round(self.lastTemperatures[cfgIndex]) + 0.12345
+						self.lastTemperatures[cfgIndex] = round(self.lastTemperatures[cfgIndex]) + 0.1111
+						print("Last was : ", self.lastTemperatures[cfgIndex],"  This is : ",self.temperatures[cfgIndex])
+		except Exception as err:
+			exc = (finfo.filename,str(finfo.lineno),str(type(err))[8:-2],str(err))
+			if not(exc in excRep):
+				excRep.append(exc)
+
+		try:
+			finfo = gf(cf())
+			for code in sensorID:
+				foundIndex = sensorID.index(code)
+				if code in self.sensorConfig.cfgIds:
+					cfgIdsIndex = self.sensorConfig.cfgIds.index(code)
+					#print("This existing code : ",cfgIdsIndex,code,"  was found")
+					# no additional action needed we have already stoored the temperature in "temperatures" list.
+				else:
+					#this is a new code and must be added to the list
+					cfgIndex = len(self.sensorConfig.cfgIds) + 1 # one more than was there before
+					self.sensorConfig.newConfigFileNeeded = True
+					self.sensorConfig.cfgIds.append(code)
+					self.temperatures.append(tempsFromSensors[foundIndex])
+					self.lastTemperatures.append(tempsFromSensors[foundIndex])
+					numberFound += 1
+			if self.sensorConfig.newConfigFileNeeded:
+				self.sensorConfig.write_file()
+		except Exception as err:
+			exc = (finfo.filename,str(finfo.lineno),str(type(err))[8:-2],str(err))
+			if not(exc in excRep):
+				excRep.append(exc)
 		return self.temperatures,excRep,numberFound
 
 if __name__ == '__main__':
@@ -137,13 +153,15 @@ if __name__ == '__main__':
 	sensor = class_sensors()
 	print("Sensor Class set up")
 	lastTime = datetime.now()
-	limit = 6000
+	limit = 1000
 	count = 0
-	pat = 50
+	pat = 100
 	startTime = datetime.now()
+	reason = ""
 	while (count<limit) or (limit == 0):
 		temperatures,excRep,numberFound = sensor.getTemp()
 		if len(excRep) > 0:
+			reason = str(excRep)
 			print("Error: ",excRep,"\n","Temperatures: ",temperatures)
 		elif numberFound != 2:
 			print("numberFound: ",numberFound, temperatures)
@@ -159,6 +177,9 @@ if __name__ == '__main__':
 		if int(round((count/pat),0)) == count/pat:
 			print("Done: ",count, " of ", limit," After: ", \
 			round(((datetime.now() - startTime).total_seconds())/60,2)," minutes.  ",temperatures)
+		if reason != "":
+			print("reason: ",reason)
+		reason = ""
 
 
 

@@ -48,7 +48,12 @@ from tuyaCloud import class_tuyaCloud
 config = class_config("configHp.cfg")
 dHp = config.deviceNumberHp
 dHtrs = config.deviceNumberHeaters
-dTemp = config.deviceNumberTemp
+dTempTH = []
+dTempTH.append(config.deviceNumberTemp1)
+dTempTH.append(config.deviceNumberTemp2)
+dTempTH.append(config.deviceNumberTemp3)
+dTempTH.append(config.deviceNumberTemp4)
+
 debug = config.debug
 
 config.scan_count = 0
@@ -65,7 +70,7 @@ hpTurnOnTime  = logTime
 hpTurnOffTime = logTime
 logType = "log"
 headings = ["Hour in Day","Room Temp","Battery","Per 10 Mins","Predicted Temp","Heaters Target Temp","HP Target Temp", \
-			"HP Out","Other Temp","Outside","Heaters Status","HP Status","TotalHeaters","TotalHP","Reason","Message"]
+			"HP In","HP Out","LowerWork","High Clock","Outside","Heaters Status","HP Status","TotalHeaters","TotalHP","Reason","Message"]
 logBuffer = class_text_buffer(headings,config,logType,logTime)
 
 
@@ -100,7 +105,7 @@ if config.doTest:
 	stSuccess,failReason,devicesStatus,excRep = cloud.getStatus()
 	if len(excRep) > 0:
 		print(excRep)
-		reason += excRep[0]
+		reason += str(excRep[0])
 
 	if stSuccess:
 		print( "\n\n","Status at after switch on : ",json.dumps(cloud.devicesStatus), "\n\n")
@@ -128,7 +133,7 @@ if config.doTest:
 	stSuccess,failReason,devicesStatus,excRep = cloud.getStatus()
 	if len(excRep) > 0:
 		print(excRep)
-		reason += excRep[0]
+		reason += str(excRep[0])
 	if stSuccess:
 		print( "\n\n","AfterdHtr Switch Off : ",json.dumps(cloud.devicesStatus), "\n\n")
 	else:
@@ -154,7 +159,7 @@ if config.doTest:
 	stSuccess,failReason,devicesStatus,excRep = cloud.getStatus()
 	if len(excRep) > 0:
 		print(excRep)
-		reason += excRep[0]
+		reason += str(excRep[0])
 	if stSuccess:
 		print( "\n\n","After dHp Switch On : ",json.dumps(cloud.devicesStatus), "\n\n")
 	else:
@@ -177,7 +182,7 @@ if config.doTest:
 	stSuccess,failReason,devicesStatus,excRep = cloud.getStatus()
 	if len(excRep) > 0:
 		print(excRep)
-		reason += excRep[0]
+		reason += str(excRep[0])
 	if stSuccess:
 		print( "\n\n","After dHp Switch Off : ",json.dumps(cloud.devicesStatus), "\n\n")
 	else:
@@ -238,26 +243,39 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 				targetHp += config.hysteresis
 			else:
 				targetHp -= config.hysteresis
-		
+		#reason + ????
 		# Do Control
 		startGetTemp = datetime.now()
 		temperatures,excRep,numberFound = sensor.getTemp()
 		if len(excRep) > 0:
-			reason += excRep[0]
+			reason += str(excRep[0])
 			print(excRep)
+		if debug:
+			print("temperatures :",temperatures)
 		stSuccess,failReason,devicesStatus,excRep = cloud.getStatus()
 		if len(excRep) > 0:
-			print(excRep)
-			reason += excRep[0]
-		if stSuccess[dTemp]:
-			#print(json.dumps(devicesStatus[dTemp],indent = 4))
-			tempTH = devicesStatus[dTemp]["va_temperature"]/10
-			humidity = devicesStatus[dTemp]["va_humidity"]
-			battery = devicesStatus[dTemp]["battery_state"]
-		else:
+			print("excRep: ",excRep)
+			reason += str(excRep[0])
 			print("failReason: ",failReason)
-			print("no temp date")
-			sys_exit()
+
+		tempTH = []
+		humidityTH = []
+		batteryTH = []
+		for indTH in range(0,len(dTempTH)):
+			if stSuccess[dTempTH[indTH]]:
+				tempTH.append(devicesStatus[dTempTH[indTH]]["va_temperature"]/10)
+				humidityTH.append(devicesStatus[dTempTH[indTH]]["va_humidity"])
+				batteryTH.append(devicesStatus[dTempTH[indTH]]["battery_state"])
+				if debug:
+					print(indTH,dTempTH[indTH],tempTH[indTH],humidityTH[indTH],batteryTH[indTH])
+			else:
+				tempTH.append(-99)
+				humidityTH.append(-99)
+				batteryTH.append(-99)
+		#print(tempTH,humidityTH,batteryTH)
+		batteries = ""
+		for battery in batteryTH:
+			batteries += " " + battery
 
 		otherTemp = tempTH
 
@@ -385,19 +403,23 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 				else:
 					print("amend command fault")
 
+#["Hour in Day","Room Temp","Battery","Per 10 Mins","Predicted Temp","Heaters Target Temp","HP Target Temp", \
+#			"HP In","HP Out","LowerWork","High Clock","Outside","Heaters Status","HP Status","TotalHeaters","TotalHP","Reason","Message"]
 
 
 		# Do Logging
 		#" Room Temp","Target Temp","heaters Status","Message"]
 		logBuffer.line_values["Hour in Day"] =  round(hourInDay,2)
-		logBuffer.line_values["RoomTemp"] = round(tempTH,2)
-		logBuffer.line_values["Battery"] = battery
+		logBuffer.line_values["RoomTemp"] = round(temperatures[config.sensorRoomTemp],2)
+		logBuffer.line_values["Batteries"] = batteries
 		logBuffer.line_values["Per 10 Mins"] = round(changeRate*10*60/config.scan_delay,2)
 		logBuffer.line_values["Predicted Temp"] = round(predictedTemp,2)
 		logBuffer.line_values["Heaters Target Temp"] = round(targetHeaters,2)
 		logBuffer.line_values["HP Target Temp"] = round(targetHp,2)
-		logBuffer.line_values["HP Out"] = round(temperatures[config.sensorHpOut],2)
-		logBuffer.line_values["Other Temp"] = round(temperatures[config.sensorRoomTemp],2)
+		logBuffer.line_values["HP In"] =  round(tempTH[2],2)
+		logBuffer.line_values["HP Out"] = round(tempTH[3],2)
+		logBuffer.line_values["Lower Work"] = round(tempTH[0],2)
+		logBuffer.line_values["High Clock"] = round(tempTH[1],2)
 		logBuffer.line_values["Outside"] = round(temperatures[config.sensorOutside],2)
 		
 		if cloud.devicesStatus[dHtrs]["switch_1"]:

@@ -12,6 +12,7 @@ from inspect import getframeinfo as gf
 #from subprocess import callpython -m pip install tinytuya
 		
 import tinytuya
+
 class class_tuyaCloud:
 	def __init__(self,config):
 		self.numberDevices = len(config.names)
@@ -211,7 +212,7 @@ class class_tuyaCloud:
 		for device in range(0,self.numberDevices):
 			#try:
 			if True:
-				reason = [" n "]*self.numberDevices
+				reason = [""]*self.numberDevices
 				try:
 					finfo = gf(cf())
 					status = self.cloud.getstatus(self.ids[device])
@@ -260,6 +261,7 @@ class class_tuyaCloud:
 
 
 	def listDevices(self):
+		print("get devices")
 		# Display list of devicesapiKey
 		devices = self.cloud.getdevices()
 		return devices
@@ -271,107 +273,102 @@ class class_tuyaCloud:
 		print("\n""\n")
 		return properties
 
-	def deviceStatus(self,id):
-		# Display Status of DeviceStauts
-		status = self.cloud.getstatus(id)
-		#print("Status of Device:\n", status)
-		#print("\n""\n")
-		return status
+# not used
+#	def deviceStatus(self,id):
+#		# Display Status of DeviceStauts
+#		status = self.cloud.getstatus(id)
+#		#print("Status of Device:\n", status)
+#		#print("\n""\n")
+#		return status
 
-	def getTH(self,id):
-		status = self.cloud.getstatus(id)
-		#print(json.dumps(status))
-		temp = float(status['result'][0]['value'])/10
-		humidity = float(status['result'][1]['value'])
-		battery = status['result'][2]['value']
-		#print("Temperaturs : ", temp, " Humidity : ",humidity, "  Battery : ",battery)
-		return temp,humidity,battery
+#not used
+#	def getTH(self,id):
+#		status = self.cloud.getstatus(id)
+#		#print(json.dumps(status))
+#		temp = float(status['result'][0]['value'])/10
+#		humidity = float(status['result'][1]['value'])
+#		battery = status['result'][2]['value']
+#		#print("Temperaturs : ", temp, " Humidity : ",humidity, "  Battery : ",battery)
+#		return temp,humidity,battery
 
-	def getHP(self,id):
-		status = self.cloud.getstatus(id)
-		if status["success"] == True:
-			values = []
-			codes = []
-			for ind in range(len(status['result'])):
-				values.append(status['result'][ind]['value'])
-				codes.append(status['result'][ind]['code'])
-			#print("RValues : ",values,"  Codes : ",codes)
-			switch = status['result'][0]['value']
-			temp_set = int(status['result'][1]['value'])
-			temp_current = int(status['result'][2]['value'])
-			mode = status['result'][3]['value']
-			windspeed = int(status['result'][4]['value'])
-			c_f	= status['result'][5]['value']
-			#print("Switch : ", switch,"temp_set : ", temp_set, " temp_current : ",temp_current, "  mode : ",mode, "  windspeed : ",windspeed, "  c_f : ",c_f)
-		else:
-			#print("Get Status Fail with message : ",status.get("msg","No message"))
-			switch,temp_set,temp_current,mode,windspeed,c_f = "","","","","",""
-		return switch,temp_set,temp_current,mode,windspeed,c_f
+# not used
+#	def getHP(self,id):
+#		status = self.cloud.getstatus(id)
+#		if status["success"] == True:
+#			values = []
+#			codes = []
+#			for ind in range(len(status['result'])):
+#				values.append(status['result'][ind]['value'])
+#				codes.append(status['result'][ind]['code'])
+#			#print("RValues : ",values,"  Codes : ",codes)
+#			switch = status['result'][0]['value']
+#			temp_set = int(status['result'][1]['value'])
+#			temp_current = int(status['result'][2]['value'])
+#			mode = status['result'][3]['value']
+#			windspeed = int(status['result'][4]['value'])
+#			c_f	= status['result'][5]['value']
+#			#print("Switch : ", switch,"temp_set : ", temp_set, " temp_current : ",temp_current, "  mode : ",mode, "  windspeed : ",windspeed, "  c_f : ",c_f)
+#		else:
+#			#print("Get Status Fail with message : ",status.get("msg","No message"))
+#			switch,temp_set,temp_current,mode,windspeed,c_f = "","","","","",""
+#		return switch,temp_set,temp_current,mode,windspeed,c_f
 
-	#def operateSwitch(self,switchNumber,stateWanted):    # Send Command - Turn on switch
-
-		# Assume online until get bad result and offline confirmed
-		printMessage =  ""
-		reason = ""
-		opFail = False
-
-		commands = {
-			'commands': 	[
-								{
-								'code': self.codes[switchNumber],
-								'value': stateWanted
-								}, 
-								{
-								'code': 'countdown_1',
-								'value': 0
-								}
-							]
-					}
-		successfullResult = False
-		try:
-			status = self.cloud.sendcommand(self.ids[switchNumber],commands)
-			#print(status, "  :  ",status.get('msg','device is online'))
-			success = status['success']
-			if status.get('msg','device is online') == 'device is offline':
-				opFail = True
-				reason += names[switchNumber] + " is offLine"
-		except:	
-			printMessage += "Cloud Send Command Fail"
-			reason += "Cloud Send Command Fail"
-			opFail = True
-
-		if successfullResult:
-			switchOn = stateWanted
-			self.lastSwitchOn[switchNumber] = switchOn
-			if stateWanted:
-				printMessage += " Switch on OK " + self.names[switchNumber]
-			else:
-				printMessage += " Switch off OK "+ self.names[switchNumber]
-		else:
-			# not successful so return last known state and error flag
-			switchOn = self.lastSwitchOn[switchNumber]
-		print(status)
-		return switchOn,opFail,printMessage,reason
-
-#if __name__ == '__main__':
-#    import sys
-#    sys.exit(main(sys.argv)
+# not used
+#	def operateSwitch(self,switchNumber,stateWanted):    # Send Command - Turn on switch
+#
+#		# Assume online until get bad result and offline confirmed
+#		printMessage =  ""
+#		reason = ""
+#		opFail = False
+#
+#		commands = {
+#			'commands': 	[
+#								{
+#								'code': self.codes[switchNumber],
+#								'value': stateWanted
+#								}, 
+#								{
+#								'code': 'countdown_1',
+#								'value': 0
+#								}
+#							]
+#					}
+#		successfullResult = False
+#		try:
+#			status = self.cloud.sendcommand(self.ids[switchNumber],commands)
+#			#print(status, "  :  ",status.get('msg','device is online'))
+#			success = status['success']
+#			if status.get('msg','device is online') == 'device is offline':
+#				opFail = True
+#				reason += names[switchNumber] + " is offLine"
+#		except:	
+#			printMessage += "Cloud Send Command Fail"
+#			reason += "Cloud Send Command Fail"
+#			opFail = True
+#
+#		if successfullResult:
+#			switchOn = stateWanted
+#			self.lastSwitchOn[switchNumber] = switchOn
+#			if stateWanted:
+#				printMessage += " Switch on OK " + self.names[switchNumber]
+#			else:
+#				printMessage += " Switch off OK "+ self.names[switchNumber]
+#		else:
+#			# not successful so return last known state and error flag
+#			switchOn = self.lastSwitchOn[switchNumber]
+#		print(status)
+#		return switchOn,opFail,printMessage,reason
 
 # test routine rin when script run direct
 if __name__ == '__main__':
 	# change this to suite number of switches.
 	# one power switch and one heat pump
 	# set up the class
-	config = class_config()
+	config = class_config("configHp.cfg")
 	config.scan_count = 0	
 	cloud = class_tuyaCloud(config)
-
-
-
-
-
-
-
+	devices = cloud.listDevices()
+	print(json.dumps(devices,indent =4))
 
 	sys_exit()
 
