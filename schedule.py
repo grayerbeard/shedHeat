@@ -33,9 +33,9 @@ class class_schedule:
 
 	def calcTargets(self,hourInDay,dayInWeek):
 		shedStatus = "Closed"
-		targetHeaters = 0
-		targetHp =0
-		desiredTemp = 0
+		targetHeaters = - 5
+		targetHp = - 5
+		desiredTemp =  -5 
 		# for debug
 		#print(f'hourInDay : {hourInDay}  dayInWeek : {dayInWeek}')
 		if dayInWeek in self.config.shedDays:
@@ -50,7 +50,7 @@ class class_schedule:
 								(self.config.temperatureSlope*(self.config.fanHeaterFollowTime + self.config.shedOpens - hourInDay)),2)
 			elif hourInDay < self.config.shedOpens:
 				shedStatus = "Slope "
-				desiredTemp = 0
+				desiredTemp = - 5
 				targetHeaters = round((self.config.desiredTemperature - self.config.fanHeaterFollowTemp) -  \
 								(self.config.temperatureSlope*(self.config.fanHeaterFollowTime + self.config.shedOpens - hourInDay)),2)
 				targetHp = round(self.config.desiredTemperature - (self.config.temperatureSlope*(self.config.shedOpens - hourInDay)),2)
@@ -74,8 +74,9 @@ class class_schedule:
 if __name__ == '__main__':
 	from configHp import class_config
 	from schedule import class_schedule
-	config = class_config()
-	schedule = class_schedule(config)
+	config = class_config("configHp.cfg")
+	baseTemp = 3
+	schedule = class_schedule(config,baseTemp)
 	print(config.shedDays)
 	start = 0
 	end = 24

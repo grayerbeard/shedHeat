@@ -218,7 +218,7 @@ sensor.errorCount = 0 # NOT being set at the moment
 
 message = ""
 reason = ""
-
+tempFailCount = 0
 
 while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 	try:
@@ -257,7 +257,11 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			print("excRep: ",excRep)
 			reason += str(excRep[0])
 			print("failReason: ",failReason)
-
+			increment = True
+		for deviceFailReason in failReason:
+			reason += deviceFailReason
+			if len(deviceFailReason) > 1:
+				increment = True
 		tempTH = []
 		humidityTH = []
 		batteryTH = []
@@ -275,7 +279,10 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 		#print(tempTH,humidityTH,batteryTH)
 		batteries = ""
 		for battery in batteryTH:
-			batteries += " " + battery
+			if type(battery)  != type("cat"):
+				batteries += " " + str(battery) + "TYPE ERROR"
+			else:
+				batteries += " " + battery 
 
 		otherTemp = tempTH
 
@@ -290,6 +297,9 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			print("Temperature reading not a float")
 
 		if temp < 0 : # No Sensor Connected
+			tempFailCount += 1
+		if (temp < 0) and (tempFailCount > 5):
+
 			print("no Sensor connected will turn heaters Off")
 
 			if cloud.amendCommands(dHtrs,"switch_1",'False'):
@@ -311,6 +321,7 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 				print("amend command fault")
 			sys_exit()
 		else:
+			tempFailCount = 0
 			tempChange = (temp - lastTemp)*config.scan_delay/60 # degrees per minute
 			changeRate = changeRate + (0.1 * (tempChange - changeRate))
 			if abs(changeRate) * 3 > 2:

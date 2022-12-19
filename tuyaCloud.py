@@ -248,11 +248,20 @@ class class_tuyaCloud:
 						exc = (finfo.filename,str(finfo.lineno),str(type(err))[8:-2],str(err)," Device: " + str(device))
 						excRep.append(exc)
 						print(exc)
-						reason[device] += "exception line  250 in tuyaCloud"
+						reason[device] += exc
 						print("exception line 251 in tuyaCloud")
-				if status.get('msg','device is online') == 'device is offline':
-					reason[device] += self.names[device] + " is offLine"
-					stSuccess[device] = False
+				# problem here was list object "spatus". "has no get
+				try:
+					finfo = gf(cf())
+					if status.get('msg','device is online') == 'device is offline':
+						reason[device] += self.names[device] + " is offLine"
+						stSuccess[device] = False
+				except:
+					exc = (finfo.filename,str(finfo.lineno),str(type(err))[8:-2],str(err)," Device: " + str(device))
+					excRep.append(exc)
+					print(exc)
+					reason[device] += exc
+					print("exception line 251 in tuyaCloud")
 			#except:	
 			#	reason += "Get Status Fail (exception) " + self.names[device] + " "
 			#	stSuccess = False

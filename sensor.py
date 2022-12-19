@@ -153,9 +153,9 @@ if __name__ == '__main__':
 	sensor = class_sensors()
 	print("Sensor Class set up")
 	lastTime = datetime.now()
-	limit = 1000
+	limit = 10000
 	count = 0
-	pat = 100
+	pat = 1
 	startTime = datetime.now()
 	reason = ""
 	while (count<limit) or (limit == 0):
