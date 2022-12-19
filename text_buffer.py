@@ -13,6 +13,7 @@ from datetime import datetime
 from shutil import copyfile
 from sys import exit as sys_exit
 import os
+import json
 
 ###
 #Tasks
@@ -28,30 +29,37 @@ class class_text_buffer(object):
 	# Rotating Buffer Class
 	# Initiate with just the size required Parameter
 	# Get data with just a position in buffer Parameter
-	def __init__(self,headings,config,logtype,logTime):
+#	def __init__(self,headings,config,logtype,logTime):
+	def __init__(self,config,logtype,logTime):
 		#initialization
 		self.__config = config
 		self.__config.logType = logtype
-		print(" Buffer Init for : ",self.__config.prog_name," with a size of : ",self.__config.text_buffer_length, " and  width of : ", len(headings) + 1, " including time stamp")
+		print(" Buffer Init for : ",self.__config.prog_name," with a size of : ",self.__config.text_buffer_length, " and  width of : ", len(self.__config.headings) + 1, " including time stamp")
 		if not os.path.exists('log'):
 		    os.makedirs('log')
 
 		self.__source_ref = 0 # a number used to control prevention repeat messages
-		self.__width = len(headings) + 1
+		#len(self.__config.headings) = len(self.__config.headings) + 1
 		###                     
-		#self.line_values = ["1"]*len(headings)
+		#self.lineValues = ["1"]*len(headings)
 		
-		self.line_values = {} 
+		self.lineValues = {}
+
+
+		for heading in self.__config.headings:
+			self.lineValues[heading]  =  heading[:3:]
+		print(self.lineValues)
 		self.email_html = "<p> No Log yet </p>"
-		self.__dta = [ [ None for di in range(self.__width+1) ] for dj in range(self.__config.text_buffer_length+1) ]
+		#self.__dta = [ [ None for di in range(len(self.__config.headings)) ] for dj in range(self.__config.text_buffer_length+1) ]
+		self.__dta = [ [ ".." for di in range(len(self.__config.headings)) ] for dj in range(self.__config.text_buffer_length+1) ]
 		self.__size = 0
 		self.__posn = self.__config.text_buffer_length-1
 		self.__headings = ["Time"]
-		for hdg_ind in range(0,self.__width-1):
-			#print(hdg_ind,headings[hdg_ind])
-			self.__headings.append(headings[hdg_ind])
+		#for hdg_ind in range(0,self.__width-1):
+		#	#print(hdg_ind,headings[hdg_ind])
+		#	self.__headings.append(headings[hdg_ind])
 		#print(self.__headings)
-		self.__pr_values = ["text"] * self.__width
+		#self.__pr_values = ["text"] * self.__width
 
 		self.__html_filename = config.prog_name + "_" + self.__config.logType + ".html"
 		self.__html_filename_save_as = config.prog_path + self.__html_filename
@@ -80,7 +88,8 @@ class class_text_buffer(object):
 	def size(self):
 		return self.__config.text_buffer_length
 
-	def update_buffer(self,values,appnd,ref):
+#	def update_buffer(self,values,appnd,ref):
+	def update_buffer(self,appnd,ref):
 		#next for debug
 		#print("104 self.__send_log_count : ",self.__send_log_count)
 		#append a line of info at the current position plus 1 
@@ -88,10 +97,15 @@ class class_text_buffer(object):
 		###
 		#print("Growing Buffer?  : ",self.__size," >> ",self.__config.text_buffer_length)
 		i = 0
-		for value in values:
-			self.__dta[self.__posn][i] =value
+		#for value in values:
+		#	self.__dta[self.__posn][i] =val
+		for heading in self.__config.headings:
+			self.__dta[self.__posn][i] = str(self.lineValues[heading])
+			#print(i,heading,self.lineValues[heading])
 			i += 1
-		
+		#sys_exit()
+
+
 		if appnd + (self.__source_ref != ref):
 			#we adding message and incrementing posn
 			if self.__size < self.__config.text_buffer_length-1 :
@@ -106,9 +120,14 @@ class class_text_buffer(object):
 			self.__source_ref = ref
 		else:
 			self.__source_ref = ref		
-		if len(values) > self.__width+1 :
-			print("Width Error for :",self.__config.prog_name, len(values) , self.__width, values)
-			sys.exit()
+		if len(self.lineValues) != len(self.__config.headings) :
+			print("Width Error for :",self.__config.prog_name, "Values :",len(self.lineValues) , " Headings ", len(self.__config.headings))
+			i = 0
+			for heading in self.__config.headings:
+				print(i,heading,self.lineValues[heading])
+				i += 1
+			print(self.lineValues)
+			sys_exit()
 		###
 		#for i in range(0,len(values)):
 		#	self.__dta[self.__posn][i] = values[i]
@@ -123,7 +142,8 @@ class class_text_buffer(object):
 
 		#print("Buffer updated and log buffer flag is : ",self.__config.log_buffer_flag)
 		if self.__config.log_buffer_flag and appnd:
-			self.__log.log_to_file(self.__headings,values)
+			self.__log.log_to_file(self.lineValues)
+			#self.__log.log_to_file(self.__headings,values)
 			#print("Data to text logging")
 			#print(self.__headings)
 			#print(values)
@@ -150,15 +170,15 @@ class class_text_buffer(object):
  
 	def get_line_dta(self, key):
 		#return stored element from position relative to current insert position in buffer
-		line_dta = [" - "]*self.__width 		
+		line_dta = [" - "]*len(self.__config.headings)
 		if (self.__posn-key) > -1:
-			# need to take values from arlogea before current insert position
-			for i in range(self.__width):
+			# ne to take values from arlogea before current insert position
+			for i in range(len(self.__config.headings)):
 				line_dta[i] = self.__dta[self.__posn-key][i]
 			return(line_dta)
 		else:
 			# need to take values from after current insert position
-			for i in range(self.__width):
+			for i in range(len(self.__config.headings)):
 				#following two lines used too debug the calc to get the lower part of status file
 				#print("That Calc key,self.__size,self.__config.text_buffer_length, self.__posn-key,key sum",
 				 #  key,self.__size,self.__config.text_buffer_length, self.__posn-key,(self.__posn-key),self.(self.__config.text_buffer_length + (self.__posn-key))
@@ -167,7 +187,7 @@ class class_text_buffer(object):
 
 	def get_dta(self):
 		# get all the data inserted so far, or the whole buffer
-		all_data = [ [ None for di in range(self.__width+1) ] for dj in range(self.__config.text_buffer_length+1) ]
+		all_data = [ [ None for di in range(len(self.__config.headings)) ] for dj in range(self.__config.text_buffer_length+1) ]
 		for ind in range(0,self.__size):
 			line_dta = self.get_line_dta(ind)
 			# Following line for debug data from Buffer
@@ -178,12 +198,12 @@ class class_text_buffer(object):
 
 	def pr(self,appnd,ref,logTime,refresh_interval):
 		here = "buffer.pr for " + self.__config.prog_name
-		make_values = [" -- "]*(self.__width+1)
-		prtime = logTime
-		for_screen = make_time_text(logTime)
+		#make_values = [" -- "]*(self.__width+1)
+		#prtime = logTime
+		#forScreen = make_time_text(logTime)
 		# following alternative will show more resolution for fractions of a second
 		# for_screen = log_time.strftime('%d/%m/%Y %H:%M:%S.%f')      
-		make_values[0] = for_screen
+		#self.lineValues["Time"] = forScreen
 		file_start = """<head>
 <meta http-equiv="refresh" content="""
 		file_start = file_start + str(refresh_interval)
@@ -205,25 +225,28 @@ class class_text_buffer(object):
 		#try:
 		i = 0
 		#for i in range(0,self.__width -1):
-		for key in self.line_values:
-			#print(key, " : ",self.line_values[key])
-			make_values[i+1] = self.line_values[key]
-			for_screen = for_screen + " " + str(self.line_values[key])
-			i += 1
+		#for key in self.lineValues:
+			#print(key, " : ",self.lineValues[key])
+		#	make_values[i+1] = self.lineValues[key]
+		#	for_screen = for_screen + " " + str(self.lineValues[key])
+		#	i += 1
+		forScreen = ""
+		for heading in self.__config.headings:
+			forScreen += " " + str(self.lineValues[heading])
 		#except:
 		#	print("Error in make values in ...buffer.pr for : ",self.__config.prog_name)
-		#	print("i,values,len(self.line_value>s),self.__width",i,self.line_values,len(self.line_values),self.__width)
+		#	print("i,values,len(self.line_value>s),self.__width",i,self.lineValues,len(self.lineValues),self.__width)
 		#	sys_exit()
 				
-		# print to screen and to status log and update html file
+		# print to s}creen and to status log and update html file
 		
 		#if appnd:
 		#	print(" a/" + self.__config.prog_name + "/" + for_screen)
 		#else:
 		#	print("na/" + self.__config.prog_name + "/" + for_screen)
-		print(for_screen)
+		print(forScreen)
 
-		self.update_buffer(make_values,appnd,ref)
+		self.update_buffer(appnd,ref)
 		with open(self.__html_filename,'w') as htmlfile:
 			htmlfile.write(file_start)
 			if self.__config.log_buffer_flag:
@@ -237,16 +260,16 @@ class class_text_buffer(object):
 					make_time_text(logTime)  + "</p>\n<p>")
 			htmlfile.write(tbl_start + tbl_start_line)
 			self.email_html = tbl_start + tbl_start_line
-			for ind in range(0,len(self.__headings)):
-				htmlfile.write(tbl_start_col + self.__headings[ind] + tbl_end_col)
-				self.email_html = self.email_html + tbl_start_col + self.__headings[ind] + tbl_end_col
+			for heading in self.__config.headings:
+				htmlfile.write(tbl_start_col + heading + tbl_end_col)
+				self.email_html = self.email_html + tbl_start_col + heading + tbl_end_col
 			htmlfile.write(tbl_end_line)
 			self.email_html = self.email_html + tbl_end_line
 			buffer_dta = self.get_dta()
 			for ind in range(self.__size):
 				htmlfile.write(tbl_start_line)
 				self.email_html = self.email_html + tbl_start_line
-				for i in range(self.__width):
+				for i in range(len(self.__config.headings)):
 					htmlfile.write(tbl_start_col + str(buffer_dta[ind][i]) + tbl_end_col)
 					self.email_html = self.email_html + tbl_start_col + str(buffer_dta[ind][i]) + tbl_end_col
 				htmlfile.write(tbl_end_line)
@@ -264,7 +287,7 @@ class class_text_buffer(object):
 		except:
 			print("Not able to copy : ",self.__html_filename, " to ", self.__www_filename)
 		
-		#message =  self.line_values[1]
+		#message =  self.lineValues[1]
 		
 		#try:
 		#	print("no mqtt")

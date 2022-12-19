@@ -101,6 +101,7 @@ class class_config:
 		section = "MeasureAndControl"
 
 		self.hysteresis =  config_read.getfloat(section, 'hysteresis')
+		self.headings = config_read.get(section, 'headings').split(",")
 		self.sensorRoomTemp =  config_read.getint(section, 'sensorRoomTemp')
 		self.sensorOther = config_read.getint(section, 'sensorOther')
 		self.sensorOutside = config_read.getint(section, 'sensorOutside')

@@ -38,6 +38,7 @@ from configHp import class_config
 from schedule import class_schedule
 from text_buffer import class_text_buffer
 from utility import prd as debugPrint
+from utility import make_time_text
 # Note use of sensor_test possible on next line
 from sensor import class_sensors
 from tuyaCloud import class_tuyaCloud
@@ -71,7 +72,7 @@ hpTurnOffTime = logTime
 logType = "log"
 headings = ["Hour in Day","Room Temp","Battery","Per 10 Mins","Predicted Temp","Heaters Target Temp","HP Target Temp", \
 			"HP In","HP Out","LowerWork","High Clock","Outside","Heaters Status","HP Status","TotalHeaters","TotalHP","Reason","Message"]
-logBuffer = class_text_buffer(headings,config,logType,logTime)
+logBuffer = class_text_buffer(config,logType,logTime)
 
 
 # Set The Initial Conditions
@@ -414,40 +415,36 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 				else:
 					print("amend command fault")
 
-#["Hour in Day","Room Temp","Battery","Per 10 Mins","Predicted Temp","Heaters Target Temp","HP Target Temp", \
-#			"HP In","HP Out","LowerWork","High Clock","Outside","Heaters Status","HP Status","TotalHeaters","TotalHP","Reason","Message"]
-
-
+#Time, Hour in Day,Room Temp,Battery,Per 10 Mins,Predicted Temp,Heaters Target Temp,HP Target Temp,
+# HP In,HP Out,Lower Work,High Clock,Outside,Heaters Status,HP Status,Total Heaters,Total HP,Reason,Message
 		# Do Logging
 		#" Room Temp","Target Temp","heaters Status","Message"]
-		logBuffer.line_values["Hour in Day"] =  round(hourInDay,2)
-		logBuffer.line_values["RoomTemp"] = round(temperatures[config.sensorRoomTemp],2)
-		logBuffer.line_values["Batteries"] = batteries
-		logBuffer.line_values["Per 10 Mins"] = round(changeRate*10*60/config.scan_delay,2)
-		logBuffer.line_values["Predicted Temp"] = round(predictedTemp,2)
-		logBuffer.line_values["Heaters Target Temp"] = round(targetHeaters,2)
-		logBuffer.line_values["HP Target Temp"] = round(targetHp,2)
-		logBuffer.line_values["HP In"] =  round(tempTH[2],2)
-		logBuffer.line_values["HP Out"] = round(tempTH[3],2)
-		logBuffer.line_values["Lower Work"] = round(tempTH[0],2)
-		logBuffer.line_values["High Clock"] = round(tempTH[1],2)
-		logBuffer.line_values["Outside"] = round(temperatures[config.sensorOutside],2)
+		logBuffer.lineValues["Time"] =make_time_text(logTime)
+		logBuffer.lineValues["Hour in Day"] =  round(hourInDay,2)
+		logBuffer.lineValues["Room Temp"] = round(temperatures[config.sensorRoomTemp],2)
+		logBuffer.lineValues["Battery"] = batteries
+		logBuffer.lineValues["Per 10 Mins"] = round(changeRate*10*60/config.scan_delay,2)
+		logBuffer.lineValues["Predicted Temp"] = round(predictedTemp,2)
+		logBuffer.lineValues["Heaters Target Temp"] = round(targetHeaters,2)
+		logBuffer.lineValues["HP Target Temp"] = round(targetHp,2)
+		logBuffer.lineValues["HP In"] =  round(tempTH[2],2)
+		logBuffer.lineValues["HP Out"] = round(tempTH[3],2)
+		logBuffer.lineValues["Lower Work"] = round(tempTH[0],2)
+		logBuffer.lineValues["High Clock"] = round(tempTH[1],2)
+		logBuffer.lineValues["Outside"] = round(temperatures[config.sensorOutside],2)
 		
 		if cloud.devicesStatus[dHtrs]["switch_1"]:
-			logBuffer.line_values["Heaters Status"] = "ON"
+			logBuffer.lineValues["Heaters Status"] = "ON"
 		else:
-			logBuffer.line_values["Heaters Status"] = "OFF"
-		#print("Heaters Status: ",logBuffer.line_values["Heaters Status"],"\n",cloud.devicesStatus[dHtrs],"\n")
+			logBuffer.lineValues["Heaters Status"] = "OFF"
+		#print("Heaters Status: ",logBuffer.lineValues["Heaters Status"],"\n",cloud.devicesStatus[dHtrs],"\n")
 		if cloud.devicesStatus[dHp]["switch"]:
-			logBuffer.line_values["HP Status"] = "ON"
+			logBuffer.lineValues["HP Status"] = "ON"
 		else:
-			logBuffer.line_values["HP Status"] = "OFF"
-		#print("Heaters status :",logBuffer.line_values["HP Status"],"\n",cloud.devicesStatus[dHp],"\n")
-		logBuffer.line_values["TotalHeaters"] = round(totalHeatersOnTime,2)
-		logBuffer.line_values["TotalHP"] = round(totalHpOnTime,2)
-
-#headings = ["Hour in Day"," Room Temp","Per 10 Mins","Predicted Temp","Heaters Target Temp","HP Target Temp", \
-# "HP Out","Outside","Heaters Status","HP Status","TotalHeaters","TotalHP","Reason","Message"]
+			logBuffer.lineValues["HP Status"] = "OFF"
+		#print("Heaters status :",logBuffer.lineValues["HP Status"],"\n",cloud.devicesStatus[dHp],"\n")
+		logBuffer.lineValues["Total Heaters"] = round(totalHeatersOnTime,2)
+		logBuffer.lineValues["Total HP"] = round(totalHpOnTime,2)
 
 		#Ensure logs at least every config.mustLog minutes 
 		timeSinceLog = (logTime - lastLogTime).total_seconds() / 60.0
@@ -461,12 +458,12 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 			
 		if (config.scan_count < 5): 
 			increment = True
-			reason += "start,"
+			reason += "start "
 			debugPrint(debug,"Reason: ",reason)
 
 
-		logBuffer.line_values["Reason"] = reason
-		logBuffer.line_values["Message"] = message
+		logBuffer.lineValues["Reason"] = reason
+		logBuffer.lineValues["Message"] = message
 
 		#next for debug
 		#print("count : ",config.scan_count," Increment : ",increment)
