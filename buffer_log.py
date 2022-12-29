@@ -104,10 +104,12 @@ class class_buffer_log:
 	def copy_log_to_www(self,dbug_flag):
 		try:
 			# send the same html file to the local web site
+			if dbug_flag:
+				print("Will try to copy : ", self.__log_filename_save_as," To ",self.__local_www_log_filename)
 			copyfile(self.__log_filename_save_as, self.__local_www_log_filename)
-			#next for debug
-			#print( "Sent : " + self.__log_filename_save_as + " to : ", self.__local_www_log_filename)
+			if dbug_flag:
+				print( "Sent : " + self.__log_filename_save_as + " to : ", self.__local_www_log_filename)
 		except:
-			print("Fail with copy " + self.__log_filename_save_as + " to : ", self.__local_www_log_filename)
+			print("Failed to copy " + self.__log_filename_save_as + " to : ", self.__local_www_log_filename)
 
 

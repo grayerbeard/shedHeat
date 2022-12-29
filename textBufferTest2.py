@@ -26,60 +26,17 @@ import json
 from utility import pr,makeTimeText,sendByFtp,fileExists,prd
 from bufferLogTest import class_buffer_log
 
-class class_bufferPosn(object):
+#class class_bufXferPosn(object):
+
 	# Rotating Buffer Posn Class
-	def __init__(self,config):
+	#def __init__(self,config):
 
-		# Set up initial conditions for the buffer before any data has been added
-		
-		self.bufferMaxSize	= config.textBufferLength + 1
-		# where the most recent data will be after current update
-		# this is also where the newset data will be
-		self.mostRecentPosn = 0
-		# where the oldest data will be after current update update
-		self.oldestPosn = 0
-		# The currect size of the buffer, always less than or equal to buffer length
-		self.usedSize = 1
-		###########
-		self.whatShownOffset= 0
 
-	def saveThisPointer(self,pointer):
-		# Move any pointer on one step in buffer allowing for nust go back to start if reaches the end
-		if pointer < (self.bufferMaxSize - 1):
-			pointer += 1
-		else:
-			pointer = 0
-		return pointer
 
-	def update(self,saveThis):
-		if saveThis and (self.usedSize == self.bufferMaxSize):
-			self.mostRecentPosn = self.saveThisPointer(self.mostRecentPosn)
-			self.oldestPosn = self.saveThisPointer(self.oldestPosn)
-			self.whatShownOffset= 1
-		elif self.usedSize < self.bufferMaxSize:
-			self.usedSize += 1
-			self.mostRecentPosn += 1
-			self.oldestPosn = 0
-			self.whatShownOffset= 1
-		else: #self.whatShownOffset== 1:
-			self.whatShownOffset= 0
 
-	def dataPosn(self,index):
-		if self.usedSize == self.bufferMaxSize:
-			# Buffer is full calculate based on position of start and end of current data
-			dataPosition = self.mostRecentPosn - index
-			if dataPosition < 0:
-				# so item wanted is in top section
-				dataPosition = self.usedSize + dataPosition
-			return dataPosition
-		else:
-			# self.usedSize must be less than buffer size
-			if index >  self.usedSize:
-				print("Error in buffer index")
-				Print("Size is : ",self.usedSize, " Index is : ",Index)
-				sysExit()
-			else:
-				return self.usedSize - index - 1
+
+
+
 
 class class_text_buffer(object):
 	# Rotating Buffer Class
@@ -88,7 +45,7 @@ class class_text_buffer(object):
 	def __init__(self,config,logtype,logTime):
 		#initialization
 		self.config = config
-		self.bufferPosn =  class_bufferPosn(self.config)
+		#self.bufXferPosn =  class_bufXferPosn(self.config)
 
 		self.config.logType = logtype
 		if config.scanDelay > 9:
@@ -154,12 +111,65 @@ class class_text_buffer(object):
 
 		self.fileEnd = """</body></html>"""
 
+		# Set up initial conditions for the buffer posn related
+		
+		self.bufferMaxSize	= config.textBufferLength + 1
+		# where the most recent data will be after current update
+		# this is also where the newset data will be
+		self.mostRecentPosn = 0
+		# where the oldest data will be after current update update
+		self.oldestPosn = 0
+		# The currect size of the buffer, always less than or equal to buffer length
+		self.usedSize = 1
+		###########
+		self.whatShownOffset= 0
+
+	def incrementDataPointer(self,pointer):
+		# Move any pointer on one step in buffer allowing for nust go back to start if reaches the end
+		if pointer < (self.bufferMaxSize - 1):
+			pointer += 1
+		else:
+			pointer = 0
+		return pointer
+
+	def update(self,saveThis):
+		if saveThis and (self.usedSize == self.bufferMaxSize):
+			self.mostRecentPosn = self.incrementDataPointer(self.mostRecentPosn)
+			self.oldestPosn = self.incrementDataPointer(self.oldestPosn)
+			self.whatShownOffset= 1
+		elif self.usedSize < self.bufferMaxSize:
+			self.usedSize += 1
+			self.mostRecentPosn += 1
+			self.oldestPosn = 0
+			self.whatShownOffset= 1
+		else: #self.whatShownOffset== 1:
+			self.whatShownOffset= 0
+
+
+	def dataPosn(self,index):
+		if self.usedSize == self.bufferMaxSize:
+			# Buffer is full calculate based on position of start and end of current data
+			dataPosition = self.mostRecentPosn - index
+			if dataPosition < 0:
+				# so item wanted is in top section
+				dataPosition = self.usedSize + dataPosition
+			return dataPosition
+		else:
+			# self.usedSize must be less than buffer size
+			if index >  self.usedSize:
+				print("Error in buffer index")
+				Print("Size is : ",self.usedSize, " Index is : ",Index)
+				sysExit()
+			else:
+				return self.usedSize - index - 1
+
+
 	def updateBuffer(self,saveThis):
 		i = 0
 		for heading in self.config.headings:
-			self.dta[self.bufferPosn.mostRecentPosn][i] = str(self.lineValues[heading])
+			self.dta[self.mostRecentPosn][i] = str(self.lineValues[heading])
 			i += 1
-		self.bufferPosn.update(saveThis)
+		self.update(saveThis)
 
 		if self.config.logBufferFlag and saveThis:
 			self.log.logToFile(self.lineValues)
@@ -176,9 +186,8 @@ class class_text_buffer(object):
 
 	def getLineData(self, key):
 		#return stored element from position relative to current insert position in buffer
-		# using function in bufferPosn class
 		lineData = [" - "]*len(self.config.headings)
-		positionInBuffer = self.bufferPosn.dataPosn(key)
+		positionInBuffer = self.dataPosn(key)
 		for i in range(len(self.config.headings)):
 			lineData[i] = self.dta[positionInBuffer][i]
 		return(lineData)	
@@ -186,7 +195,7 @@ class class_text_buffer(object):
 	def getData(self):
 		# get all the data inserted so far, or the whole buffer
 		all_data = [ [ None for di in range(len(self.config.headings)) ] for dj in range(self.config.textBufferLength+1) ]
-		for ind in range(0,self.bufferPosn.usedSize):
+		for ind in range(0,self.usedSize):
 			lineData = self.getLineData(ind)
 			# Following line for debug data from Buffer
 			# print("get_dta >>>",ind,lineData)
@@ -228,7 +237,7 @@ class class_text_buffer(object):
 			htmlFile.write(self.tblEndLine)
 			self.emailHtml += self.tblEndLine
 			bufferData = self.getData()
-			for ind in range(self.bufferPosn.whatShownOffset,self.bufferPosn.usedSize+self.bufferPosn.whatShownOffset-1):
+			for ind in range(self.whatShownOffset,self.usedSize+self.whatShownOffset-1):
 				htmlFile.write(self.tblStartLine)
 				self.emailHtml +=  self.tblStartLine
 				for i in range(len(self.config.headings)):
@@ -290,7 +299,7 @@ if __name__ == '__main__':
 		logBuffer.lineValues["Time"] = makeTimeText(logTime)
 		logBuffer.lineValues["Count"] =  str(config.scanCount)
 		logBuffer.lineValues["Hour In Day"] = round(hourInDay,2)
-		logBuffer.lineValues["Position"] = str(logBuffer.bufferPosn.mostRecentPosn)
+		logBuffer.lineValues["Position"] = str(logBuffer.mostRecentPosn)
 		logBuffer.lineValues["Heading5"] = "head5"
 		logBuffer.lineValues["Heading6"] = "head6"
 	
