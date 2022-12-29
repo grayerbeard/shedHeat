@@ -25,13 +25,13 @@
 
 # Standard library imports
 #from configparser import RawConfigParser
-from csv import DictReader as csv_DictReader
-from csv import DictWriter as csv_DictWriter
+from csv import DictReader as csvDictReader
+from csv import DictWriter as csvDictWriter
 from datetime import datetime
 from shutil import copyfile
 from ftplib import FTP
-from sys import argv as sys_argv
-from sys import exit as sys_exit
+from sys import argv as sysArgv
+from sys import exit as sysExit
 
 import socket
 
@@ -44,70 +44,69 @@ from utility import pr,makeTimeText,sendByFtp
 class class_buffer_log:
 	def __init__(self,config,logTime):
 		self.dbug = False
-		self.__send_plain_count = 5
-		self.__no_heading_yet = True
-		self.__config = config
+		self.sendPlainCount = 5
+		self.noHeadingYet = True
+		self.config = config
 		timestamp = makeTimeText(logTime)
-		self.log_filename = timestamp + "_" + self.__config.prog_name + "_" + self.__config.logType + ".csv"
-		self.__log_filename_save_as = self.__config.prog_path + self.__config.log_directory + self.log_filename
-		self.__local_www_log_filename = self.__config.local_dir_www + "/" + self.__config.log_directory + self.log_filename
-		print("self.log_filename : ",self.log_filename)
-		print("self.__log_filename_save_as : ",self.__log_filename_save_as)
-		print("self.__local_www_log_filename : ",self.__local_www_log_filename)
+		self.logFileName = timestamp + "_" + self.config.progName + "_" + self.config.logType + ".csv"
+		self.logFileNameSaveAs = self.config.progPath + self.config.logDirectory + self.logFileName
+		self.localWwwLogFileName = self.config.localDirWww + "/" + self.config.logDirectory + self.logFileName
+		print("self.log_filename : ",self.logFileName)
+		print("self.log_filename_save_as : ",self.logFileNameSaveAs)
+		print("self.local_www_log_filename : ",self.localWwwLogFileName)
 
-#	def log_to_file(self,log_headings,log_values):
-	def log_to_file(self,log_values):
+	def logToFile(self,log_values):
 		here = 	"log_cpu_data_to_file"
 		#write the time at the start of the line in logging file
 	
-		if self.__no_heading_yet:
-			self.__no_heading_yet = False
-			self.__log_file = open(self.__log_filename_save_as,'w')
+		if self.noHeadingYet:
+			self.noHeadingYet = False
+			self.logFile = open(self.logFileNameSaveAs,'w')
 			#for hdg_ind in range(0,len(log_headings)):
-			#	self.__log_file.write(log_headings[hdg_ind] + ",")
+			#	self.log_file.write(log_headings[hdg_ind] + ",")
 			
-			for heading  in self.__config.headings:
+			for heading  in self.config.headings:
 				
-				self.__log_file.write(heading + ",")
-			self.__log_file.write("\n")
+				self.logFile.write(heading + ",")
+			self.logFile.write("\n")
 		#print("string made by Buffer Log")
 		madeString = ""
 		#for z in range(0,len(log_values),1):
-		#	self.__log_file.write(str(log_values[z]) + ",")
+		#	self.log_file.write(str(log_values[z]) + ",")
 		#	madeString += str(log_values[z]) + ","
 		#filedRecord = {}
-		for heading in self.__config.headings:
+		for heading in self.config.headings:
 			#filedRecord[heading] = str(log_values[heading]) + ","
-			self.__log_file.write(str(log_values[heading]) + ",")
+			self.logFile.write(str(log_values[heading]) + ",")
 		#print("Logged as :",filedRecord)
-		self.__log_file.write("\n")
-		self.__log_file.flush()
+		self.logFile.write("\n")
+		self.logFile.flush()
 		
 		return
 		
-	def send_log_by_ftp(self,FTP_dbug_flag,remote_log_dir,ftp_timeout):
-		ftp_result = send_by_ftp(FTP_dbug_flag,self.__config.ftp_creds_filename, self.__log_filename_save_as, \
+	def sendLogByFtp(self,FTP_dbug_flag,remote_log_dir,ftp_timeout):
+		ftp_result = send_by_ftp(FTP_dbug_flag,self.config.ftp_creds_filename, self.log_filename_save_as, \
 			self.log_filename,remote_log_dir,ftp_timeout)
 		for pres_ind in range(0,len(ftp_result)):
 			pr(FTP_dbug_flag,here, str(pres_ind) + " : ", ftp_result[pres_ind])
-		if self.__send_plain_count < 0 :
-			ftp_result = send_by_ftp(FTP_dbug_flag,self.__config.ftp_creds_filename, self.__log_filename_save_as, \
+		if self.send_plain_count < 0 :
+			ftp_result = send_by_ftp(FTP_dbug_flag,self.config.ftp_creds_filename, self.log_filename_save_as, \
 				"log.csv",remote_log_dir,ftp_timeout)
 			for pres_ind in range(0,len(ftp_result)):
 				pr(FTP_dbug_flag,here, str(pres_ind) + " : ", ftp_result[pres_ind])
-			self.__send_plain_count = 10
+			self.send_plain_count = 10
 		else:
-			self.__send_plain_count -= 1
-			#print("Send plain count : ",self.__send_plain_count)
+			self.send_plain_count -= 1
+			#print("Send plain count : ",self.send_plain_count)
 		return
 					
-	def copy_log_to_www(self,dbug_flag):
+	def copyLogToWww(self,dbug_flag):
 		try:
 			# send the same html file to the local web site
-			copyfile(self.__log_filename_save_as, self.__local_www_log_filename)
+			copyfile(self.log_filename_save_as, self.local_www_log_filename)
 			#next for debug
-			#print( "Sent : " + self.__log_filename_save_as + " to : ", self.__local_www_log_filename)
+			#print( "Sent : " + self.log_filename_save_as + " to : ", self.local_www_log_filename)
 		except:
-			print("Fail with copy " + self.__log_filename_save_as + " to : ", self.__local_www_log_filename)
+			print("Fail with copy " + self.log_filename_save_as + " to : ", self.local_www_log_filename)
 
 

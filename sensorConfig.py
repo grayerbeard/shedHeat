@@ -30,7 +30,7 @@ from configparser import RawConfigParser
 #from w1thermsensor import W1ThermSensor
 
 # Local application imports
-from utility import fileexists
+from utility import fileExists
 
 class class_sensorConfig:
 	def __init__(self):
@@ -38,7 +38,7 @@ class class_sensorConfig:
 		self.cfgIds = []
 		self.failDefault = -100
 		#Set up Config file and read it in if present
-		if fileexists(self.sensorConfig_filename):		
+		if fileExists(self.sensorConfig_filename):		
 			print( "will try to read sensorConfig File : " ,self.sensorConfig_filename)
 			config_read = RawConfigParser()
 			config_read.read(self.sensorConfig_filename)

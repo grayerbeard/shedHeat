@@ -29,7 +29,7 @@
 # Third party imports
 from w1thermsensor import W1ThermSensor, Sensor
 # Local application imports
-from utility import fileexists
+from utility import fileExists
 from sensorConfig import class_sensorConfig
 from time import sleep as time_sleep
 from datetime import datetime
@@ -144,7 +144,7 @@ if __name__ == '__main__':
 
 	#Set up Config file and read it in if present
 	#config = class_config()
-	#if fileexists(config.config_filename):		
+	#if fileExists(config.config_filename):		
 	#	print( "will try to read Config File : " ,config.config_filename)
 	#	config.read_file() # overwrites from file
 	#else : # no file so file needs to be writen

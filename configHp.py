@@ -32,13 +32,13 @@ from sys import exit as sys_exit
 from os import path
 from sys import argv as sys_argv
 from sys import exit as sys_exit
-from utility import fileexists,pr,prd,make_time_text,makeBoolean
+from utility import fileExists,pr,prd,makeTimeText,makeBoolean
 
 # Third party imports
 #from w1thermsensor import W1ThermSensor
 
 # Local application imports
-#from utility import pr,make_time_text,send_by_ftp
+#from utility import pr,makeTimeText,send_by_ftp
 
 class class_config:
 	def __init__(self,config_filename):
@@ -48,7 +48,7 @@ class class_config:
 		self.logType = "log" # default log type
 		defaultConfig = "default_" + config_filename
 		
-		if fileexists(config_filename):		
+		if fileExists(config_filename):		
 			print( "Will use : " ,config_filename)
 			try:
 				copyfile("old" + defaultConfig,"older" + defaultConfig)
@@ -65,7 +65,7 @@ class class_config:
 				print("copied ", config_filename," to ",defaultConfig)
 			except:
 				print("noFilecalled: ",config_filename," to copy")
-		elif fileexists(defaultConfig): 
+		elif fileExists(defaultConfig): 
 			print("Will copy ",defaultConfig," to ",config_filename, " and use that")
 			copyfile(defaultConfig,config_filename)
 		else:
@@ -122,8 +122,6 @@ class class_config:
 		self.numberCommandSets = config_read.getint(section, 'numberCommandSets')
 		self.doTest = config_read.getboolean(section, 'doTest')
 		self.debug = config_read.getboolean(section, 'debug')
-
-
 #		New method
 		#self.tuyaTempSensorDeviceNumbers = config_read.getint(section, 'tuyaTempSensorDeviceNumbers')
 		#self.tuyaTempSensorNames = config_read.get(section, 'tuyaTempSensorNames').split(",")

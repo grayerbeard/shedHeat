@@ -22,7 +22,7 @@ import json
 # add better top of page live data display
 
 # Local application imports
-from utility import pr,make_time_text,send_by_ftp,fileexists
+from utility import pr,makeTimeText,sendByFtp,fileExists
 from buffer_log import class_buffer_log
 
 class class_text_buffer(object):
@@ -150,7 +150,7 @@ class class_text_buffer(object):
 			
 			
 			
-			if fileexists(self.__www_filename):
+			if fileExists(self.__www_filename):
 				try:
 					self.__log.copy_log_to_www(False)
 				except:
@@ -160,10 +160,10 @@ class class_text_buffer(object):
 			# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   NEXT    Needs to be time based @@@@@@@@@@@@@@@@@@@@@@@@@
 			#next for debug
 			#print("160 self.__send_log_count : ",self.__send_log_count)
-			if self.__send_log_count > 10 and fileexists(self.__ftp_creds):
+			if self.__send_log_count > 10 and fileExists(self.__ftp_creds):
 				self.__log.send_log_by_ftp(False,self.__config.log_directory,self.__config.ftp_timeout)
 				self.__send_log_count = 0
-			elif fileexists(self.__ftp_creds):
+			elif fileExists(self.__ftp_creds):
 				self.__send_log_count += 1
 			else:
 				self.__send_log_count = 0
@@ -200,7 +200,7 @@ class class_text_buffer(object):
 		here = "buffer.pr for " + self.__config.prog_name
 		#make_values = [" -- "]*(self.__width+1)
 		#prtime = logTime
-		#forScreen = make_time_text(logTime)
+		#forScreen = makeTimeText(logTime)
 		# following alternative will show more resolution for fractions of a second
 		# for_screen = log_time.strftime('%d/%m/%Y %H:%M:%S.%f')      
 		#self.lineValues["Time"] = forScreen
@@ -252,12 +252,12 @@ class class_text_buffer(object):
 			if self.__config.log_buffer_flag:
 				self.logFile = self.__config.log_directory + self.__log.log_filename
 				htmlfile.write('<p>' + self.__html_filename + ' : ' + 
-					make_time_text(logTime)  + '      ' +
+					makeTimeText(logTime)  + '      ' +
 					'<a href= "' + self.logFile + 
 					'" target="_blank"> View CSV Log File </a></p>\n<p>')
 			else:
 				htmlfile.write("<p>" + self.__html_filename + " : " + 
-					make_time_text(logTime)  + "</p>\n<p>")
+					makeTimeText(logTime)  + "</p>\n<p>")
 			htmlfile.write(tbl_start + tbl_start_line)
 			self.email_html = tbl_start + tbl_start_line
 			for heading in self.__config.headings:
@@ -296,11 +296,11 @@ class class_text_buffer(object):
 		#except:
 		#	print("Mqtt cant send")
 				
-		if fileexists(self.__ftp_creds):
+		if fileExists(self.__ftp_creds):
 			if self.__send_html_count >= 3:
 				# To debug FTP change end of following line to " = True"   !!!!!!!!!!!! 
 				FTP_dbug_flag = False
-				ftp_result = send_by_ftp(FTP_dbug_flag,self.__ftp_creds, self.__html_filename_save_as, self.__html_filename,"",self.__config.ftp_timeout)
+				ftp_result = sendByFtp(FTP_dbug_flag,self.__ftp_creds, self.__html_filename_save_as, self.__html_filename,"",self.__config.ftp_timeout)
 				for pres_ind in range(0,len(ftp_result)):
 					pr(FTP_dbug_flag,here, str(pres_ind) + " : ", ftp_result[pres_ind])
 				self.__send_html_count = 0

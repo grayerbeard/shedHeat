@@ -23,7 +23,7 @@
 # python_version  :3
 
 # Standard library imports
-from time import sleep as time_sleep
+from time import sleep as timeSleep
 from os import path
 from datetime import datetime
 from sys import exit as sys_exit
@@ -38,7 +38,7 @@ from configHp import class_config
 from schedule import class_schedule
 from text_buffer import class_text_buffer
 from utility import prd as debugPrint
-from utility import make_time_text
+from utility import makeTimeText
 # Note use of sensor_test possible on next line
 from sensor import class_sensors
 from tuyaCloud import class_tuyaCloud
@@ -70,8 +70,6 @@ heatersTurnOffTime = logTime
 hpTurnOnTime  = logTime
 hpTurnOffTime = logTime
 logType = "log"
-headings = ["Hour in Day","Room Temp","Battery","Per 10 Mins","Predicted Temp","Heaters Target Temp","HP Target Temp", \
-			"HP In","HP Out","LowerWork","High Clock","Outside","Heaters Status","HP Status","TotalHeaters","TotalHP","Reason","Message"]
 logBuffer = class_text_buffer(config,logType,logTime)
 
 
@@ -116,7 +114,7 @@ if config.doTest:
 	print("Heaters should be on for ten Seconds")
 	print("Heater: ",cloud.devicesStatus[dHtrs]["switch_1"])
 
-	time_sleep(2)
+	timeSleep(2)
 	
 	if cloud.amendCommands(dHtrs,"switch_1",'False'): # Check if worked
 
@@ -166,7 +164,7 @@ if config.doTest:
 	else:
 		print(stSuccess,failReason)
 
-	time_sleep(10)
+	timeSleep(10)
 	
 	
 	if cloud.amendCommands(dHp,"switch", 'False'):
@@ -419,7 +417,7 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 # HP In,HP Out,Lower Work,High Clock,Outside,Heaters Status,HP Status,Total Heaters,Total HP,Reason,Message
 		# Do Logging
 		#" Room Temp","Target Temp","heaters Status","Message"]
-		logBuffer.lineValues["Time"] =make_time_text(logTime)
+		logBuffer.lineValues["Time"] =makeTimeText(logTime)
 		logBuffer.lineValues["Hour in Day"] =  round(hourInDay,2)
 		logBuffer.lineValues["Room Temp"] = round(temperatures[config.sensorRoomTemp],2)
 		logBuffer.lineValues["Battery"] = batteries
@@ -483,7 +481,7 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 		if loop_time < (config.scan_delay - (correction/1000)):
 			sleep_time = config.scan_delay - loop_time - (correction/1000)
 			try:
-				time_sleep(sleep_time)
+				timeSleep(sleep_time)
 			except KeyboardInterrupt:
 				print(".........Ctrl+C pressed... Output Off 288")
 				print("Switching off heaters")
@@ -508,7 +506,7 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 				else:
 					print("amend command fault")
 
-				time_sleep(10)
+				timeSleep(10)
 				sys_exit()
 
 			except ValueError:
@@ -516,12 +514,12 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 				      loop_time,"correction/1000 : ",correction/1000)
 				print("Will do sleep using config.scan_delay and reset correction to 7.5msec")
 				correction = 7.5
-				time_sleep(config.scan_delay)
+				timeSleep(config.scan_delay)
 			except Exception:
-				print("some other error with time_sleep try with config.scan_delay")
-				time_sleep(config.scan_delay) 
+				print("some other error with timeSleep try with config.scan_delay")
+				timeSleep(config.scan_delay) 
 		else:
-			time_sleep(config.scan_delay)
+			timeSleep(config.scan_delay)
 		last_end = the_end_time
 		the_end_time = datetime.now()
 		last_total = (the_end_time - last_end).total_seconds()
@@ -554,7 +552,7 @@ while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 		else:
 			print("amend command fault")
 
-		time_sleep(10)
+		timeSleep(10)
 
 		sys_exit()
 
