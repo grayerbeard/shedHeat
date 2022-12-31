@@ -34,6 +34,7 @@ class class_tuyaCloud:
 			sys_exit()
 
 		self.commandPairs = [[]]*config.numberCommandSets
+		print("self.commandPairs ",self.commandPairs)
 
 		# old/current method
 		self.codes = []

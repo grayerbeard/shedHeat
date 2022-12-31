@@ -1,0 +1,25 @@
+Status of Device:
+ 	{'result': 
+		[
+			{
+			'code': 'va_temperature', 
+			'value': 91
+			}, 
+			{
+			'code': 'va_humidity', 
+			'value': 84
+			},
+			{
+			'code': 'battery_state', 
+			'value': 'high'
+			},
+			{
+			'code': 'temp_unit_convert',
+			 'value': 'c'
+			}
+		], 
+			'success': True, 
+			't': 1669487923050, 
+			'tid': '8d5efe466db911ed8ac2164a0a4aa718'
+			
+	}

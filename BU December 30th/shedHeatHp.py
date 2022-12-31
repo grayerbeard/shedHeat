@@ -36,7 +36,7 @@ import json
 # Local application imports
 from configHp import class_config
 from schedule import class_schedule
-from textBuffer import class_text_buffer
+from text_buffer import class_text_buffer
 from utility import prd as debugPrint
 from utility import makeTimeText
 # Note use of sensor_test possible on next line
@@ -70,7 +70,7 @@ heatersTurnOffTime = logTime
 hpTurnOnTime  = logTime
 hpTurnOffTime = logTime
 logType = "log"
-logBuffer = class_text_buffer(config,logTime)
+logBuffer = class_text_buffer(config,logType,logTime)
 
 
 # Set The Initial Conditions
@@ -78,6 +78,11 @@ the_end_time = datetime.now()
 loop_time = 0
 correction = 7.5
 # Ensure start right by inc buffer
+
+if config.scan_delay > 9:
+	refresh_time = config.scan_delay
+else:
+	refresh_time = 2*config.scan_delay
 
 # Check Heaters Switch
 
@@ -188,7 +193,7 @@ if config.doTest:
 	sys_exit()
 
 programTemp = 0
-saveThis = True
+increment = True
 changeRate = 0
 #lastTemp,tries = sensor.getTemp()
 lastTemp = 0
@@ -214,7 +219,7 @@ message = ""
 reason = ""
 tempFailCount = 0
 
-while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
+while (config.scan_count <= config.max_scans) or (config.max_scans == 0):
 	try:
 		# Sort out Time in Day and Day in week etc
 		logTime= datetime.now()
@@ -251,11 +256,11 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 			print("excRep: ",excRep)
 			reason += str(excRep[0])
 			print("failReason: ",failReason)
-			saveThis = True
+			increment = True
 		for deviceFailReason in failReason:
 			reason += deviceFailReason
 			if len(deviceFailReason) > 1:
-				saveThis = True
+				increment = True
 		tempTH = []
 		humidityTH = []
 		batteryTH = []
@@ -316,13 +321,13 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 			sys_exit()
 		else:
 			tempFailCount = 0
-			tempChange = (temp - lastTemp)*config.scanDelay/60 # degrees per minute
+			tempChange = (temp - lastTemp)*config.scan_delay/60 # degrees per minute
 			changeRate = changeRate + (0.1 * (tempChange - changeRate))
 			if abs(changeRate) * 3 > 2:
 				changeRate = changeRate * 0.95
 				message += " RR" + str(round(changeRate,3)) + ", "
 				#print( "changeRate reduced : ",changeRate)
-				saveThis = True
+				increment = True
 				reason += "01ChangeRateReduced"
 				print("Reason: ",reason)
 				
@@ -337,7 +342,7 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 					heatersTurnOffTime = logTime
 					heatersOnTime = (heatersTurnOffTime - heatersTurnOnTime).total_seconds() / 60.0
 					totalHeatersOnTime += heatersOnTime
-					saveThis = True
+					increment = True
 					reason += "02deviceNumberHpheaters Off,"
 					print("Reason: ",reason)
 					message += "htrs off after " + str(round(heatersOnTime,2))
@@ -345,7 +350,7 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 				if cloud.amendCommands(dHtrs,"switch_1",'False'):
 					success,stSuccess,failReason = cloud.upDateDevice(dHtrs)
 					if not(success and stSuccess):
-						saveThis = True
+						increment = True
 						reason += failReason + " ##6 "
 						print("Reason: ",reason)
 				else:
@@ -357,7 +362,7 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 					#print("Temp < Target so turn heaters ON")
 					heatersTurnOnTime = logTime
 					heatersOffTime = (heatersTurnOnTime - heatersTurnOffTime).total_seconds() / 60.0
-					saveThis = True
+					increment = True
 					reason += "03heatersON"
 					print("Reason: ",reason)
 					message += "htrs on after " + str(round(heatersOffTime,2))
@@ -365,7 +370,7 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 				if cloud.amendCommands(dHtrs,"switch_1",'True'):
 					success,stSuccess,failReason = cloud.upDateDevice(dHtrs)
 					if not(success and stSuccess):
-						saveThis = True
+						increment = True
 						reason += failReason + " ##7 "
 						print("Reason: ",reason)
 				else:
@@ -377,7 +382,7 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 					hpTurnOffTime = logTime
 					hpOnTime = (hpTurnOffTime - hpTurnOnTime).total_seconds() / 60.0
 					totalHpOnTime += hpOnTime
-					saveThis = True
+					increment = True
 					reason += "04deviceNumberHphp Off,"
 					print("Reason: ",reason)
 					message += "05HP off after " + str(round(hpOnTime,2))
@@ -385,7 +390,7 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 				if cloud.amendCommands(dHp,"switch",'False'):
 					success,stSuccess,failReason = cloud.upDateDevice(dHp)
 					if not(success and stSuccess):
-						saveThis = True
+						increment = True
 						reason += failReason + " ##8 "
 						print("Reason : ",reason)
 				else:
@@ -395,14 +400,14 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 					#print("Temp < Target so turn hp ON")
 					hpTurnOnTime = logTime
 					hpOffTime = (hpTurnOnTime - hpTurnOffTime).total_seconds() / 60.0
-					saveThis = True
+					increment = True
 					reason += "hpON"
 					print("Reason: ",reason)
 					message += "htrs on after " + str(round(hpOffTime,2))
 				if cloud.amendCommands(dHp,"switch",'True'):
 					success,stSuccess,failReason = cloud.upDateDevice(dHp)
 					if not(success and stSuccess):
-						saveThis = True
+						increment = True
 						reason += failReason  + " ##9 "
 						print("Reason: ",reason)
 				else:
@@ -416,7 +421,7 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 		logBuffer.lineValues["Hour in Day"] =  round(hourInDay,2)
 		logBuffer.lineValues["Room Temp"] = round(temperatures[config.sensorRoomTemp],2)
 		logBuffer.lineValues["Battery"] = batteries
-		logBuffer.lineValues["Per 10 Mins"] = round(changeRate*10*60/config.scanDelay,2)
+		logBuffer.lineValues["Per 10 Mins"] = round(changeRate*10*60/config.scan_delay,2)
 		logBuffer.lineValues["Predicted Temp"] = round(predictedTemp,2)
 		logBuffer.lineValues["Heaters Target Temp"] = round(targetHeaters,2)
 		logBuffer.lineValues["HP Target Temp"] = round(targetHp,2)
@@ -442,15 +447,15 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 		#Ensure logs at least every config.mustLog minutes 
 		timeSinceLog = (logTime - lastLogTime).total_seconds() / 60.0
 
-		if timeSinceLog > config.mustLog - (config.scanDelay/120):
+		if timeSinceLog > config.mustLog - (config.scan_delay/120):
 			lastLogTime = logTime
 			
-			saveThis = True
+			increment = True
 			reason += " MustLog, "
 			print(reason)
 			
 		if (config.scan_count < 5): 
-			saveThis = True
+			increment = True
 			reason += "start "
 			debugPrint(debug,"Reason: ",reason)
 
@@ -459,10 +464,10 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 		logBuffer.lineValues["Message"] = message
 
 		#next for debug
-		#print("count : ",config.scan_count," Increment : ",saveThis)
+		#print("count : ",config.scan_count," Increment : ",increment)
 
-		logBuffer.pr(saveThis,logTime)
-		saveThis = False
+		logBuffer.pr(increment,0,logTime,refresh_time)
+		increment = False
 		reason = ""
 		message = ""
 
@@ -473,15 +478,15 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 		
 		# Adjust the sleep time to aceive the target loop time and apply
 		# with a slow acting correction added in to gradually improve accuracy
-		if loop_time < (config.scanDelay - (correction/1000)):
-			sleep_time = config.scanDelay - loop_time - (correction/1000)
+		if loop_time < (config.scan_delay - (correction/1000)):
+			sleep_time = config.scan_delay - loop_time - (correction/1000)
 			try:
 				timeSleep(sleep_time)
 			except KeyboardInterrupt:
 				print(".........Ctrl+C pressed... Output Off 288")
 				print("Switching off heaters")
 
-				commands = {"commands": {"code": "switch_1", "value": False}}
+				commands = {"commands": {"code": "switch_1", "value": false}}
 
 				if cloud.amendCommands(dHtrs,"switch_1",'False'):
 					success,stSuccess,failReason = cloud.upDateDevice(dHtrs)
@@ -507,19 +512,19 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 			except ValueError:
 				print("sleep_Time Error value is: ",sleep_time, "loop_time: ",
 				      loop_time,"correction/1000 : ",correction/1000)
-				print("Will do sleep using config.scanDelay and reset correction to 7.5msec")
+				print("Will do sleep using config.scan_delay and reset correction to 7.5msec")
 				correction = 7.5
-				timeSleep(config.scanDelay)
+				timeSleep(config.scan_delay)
 			except Exception:
-				print("some other error with timeSleep try with config.scanDelay")
-				timeSleep(config.scanDelay) 
+				print("some other error with timeSleep try with config.scan_delay")
+				timeSleep(config.scan_delay) 
 		else:
-			timeSleep(config.scanDelay)
+			timeSleep(config.scan_delay)
 		last_end = the_end_time
 		the_end_time = datetime.now()
 		last_total = (the_end_time - last_end).total_seconds()
-		error = 1000*(last_total - config.scanDelay)
-		if error > 250*(config.scanDelay):
+		error = 1000*(last_total - config.scan_delay)
+		if error > 250*(config.scan_delay):
 			print("Large Error ignored it was : ",error)
 		else:
 			correction = correction + (0.15*error)

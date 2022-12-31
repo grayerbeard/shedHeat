@@ -41,15 +41,15 @@ from utility import fileExists,pr,prd,makeTimeText,makeBoolean
 #from utility import pr,makeTimeText,send_by_ftp
 
 class class_config:
-	def __init__(self,configFileName):
-		self.progPath = path.dirname(path.realpath(__file__)) + "/"
-		self.progName = str(sys_argv[0][:-3])
+	def __init__(self,config_filename):
+		self.prog_path = path.dirname(path.realpath(__file__)) + "/"
+		self.prog_name = str(sys_argv[0][:-3])
 		self.__default_config_filename = "configHp_default.cfg"
 		self.logType = "log" # default log type
-		defaultConfig = "default_" + configFileName
+		defaultConfig = "default_" + config_filename
 		
-		if fileExists(configFileName):		
-			print( "Will use : " ,configFileName)
+		if fileExists(config_filename):		
+			print( "Will use : " ,config_filename)
 			try:
 				copyfile("old" + defaultConfig,"older" + defaultConfig)
 				print("copied ","old" + defaultConfig," to ","older" + defaultConfig )
@@ -61,31 +61,30 @@ class class_config:
 			except:
 				print("noFilecalled: ",defaultConfig," to copy")
 			try:
-				copyfile(configFileName,defaultConfig)
-				print("copied ", configFileName," to ",defaultConfig)
+				copyfile(config_filename,defaultConfig)
+				print("copied ", config_filename," to ",defaultConfig)
 			except:
-				print("noFilecalled: ",configFileName," to copy")
+				print("noFilecalled: ",config_filename," to copy")
 		elif fileExists(defaultConfig): 
-			print("Will copy ",defaultConfig," to ",configFileName, " and use that")
-			copyfile(defaultConfig,configFileName)
+			print("Will copy ",defaultConfig," to ",config_filename, " and use that")
+			copyfile(defaultConfig,config_filename)
 		else:
 			print(debug,"No Config File or defaultt filke must exit")
 			sys_exit()
 
 		config_read = RawConfigParser()
-		config_read.read(configFileName)
+		config_read.read(config_filename)
 
 		section = "Scan"
-		self.scanDelay = float(config_read.get(section, 'scanDelay')) 
-		self.maxScans = float(config_read.get(section, 'maxScans'))
+		self.scan_delay = float(config_read.get(section, 'scan_delay')) 
+		self.max_scans = float(config_read.get(section, 'max_scans'))
 		self.mustLog = float(config_read.get(section, 'mustLog'))
 
 		section = "Log"
-		self.logDirectory = config_read.get(section, 'logDirectory')
-		self.localDirWww = config_read.get(section, 'localDirWww')
-		self.logBufferFlag = config_read.getboolean(section, 'logBufferFlag')
-		self.textBufferLength  = config_read.getint(section, 'textBufferLength')
-		self.addToHtmlFile = config_read.get(section, 'addToHtmlFile')
+		self.log_directory = config_read.get(section, 'log_directory')
+		self.local_dir_www = config_read.get(section, 'local_dir_www')
+		self.log_buffer_flag = config_read.getboolean(section, 'log_buffer_flag')
+		self.text_buffer_length  = config_read.getint(section, 'text_buffer_length')		
 
 		section = "Schedule"
 		shedDays = config_read.get(section, 'shedDays').split(",")
@@ -142,8 +141,8 @@ class class_config:
 		#for setValuesTypes in self.gotValuesTypes:
 		#	self.valuesTypes.append(setValuesTypes)
 
-		prd(self.debug,"Program Name is : ",self.progName)
-		prd(self.debug,"config file is : ",configFileName)
+		prd(self.debug,"Program Name is : ",self.prog_name)
+		prd(self.debug,"config file is : ",config_filename)
 		prd(self.debug,"Default config file is : ",defaultConfig)
 		return
 
