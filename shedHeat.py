@@ -296,7 +296,11 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 
 		otherTemp = tempTH
 
-		temp = temperatures[config.sensorRoomTemp]
+		if len(temperatures) > config.sensorRoomTemp:
+			temp = temperatures[config.sensorRoomTemp]
+		else:
+			temp = lastTemp
+			print("No Room Sensor Reading")
 
 		if config.scan_count < 2:
 			lastTemp = temp
@@ -440,7 +444,10 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 		logBuffer.lineValues["HP Out"] = round(tempTH[3],2)
 		logBuffer.lineValues["Lower Work"] = round(tempTH[0],2)
 		logBuffer.lineValues["High Clock"] = round(tempTH[1],2)
-		logBuffer.lineValues["Outside"] = round(temperatures[config.sensorOutside],2)
+		if len(temperatures) > config.sensorOutside:
+			logBuffer.lineValues["Outside"] = round(temperatures[config.sensorOutside],2)
+		else:
+			logBuffer.lineValues["Outside"] = "??"
 		
 		if cloud.devicesStatus[dHtrs]["switch_1"]:
 			logBuffer.lineValues["Heaters Status"] = "ON"
