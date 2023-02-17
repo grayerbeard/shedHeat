@@ -43,7 +43,7 @@ from utility import pr,makeTimeText,sendByFtp
 
 class class_buffer_log:
 	def __init__(self,config,logTime):
-		self.dbug = False
+		self.debug = config.debug
 		self.sendPlainCount = 5
 		self.noHeadingYet = True
 		self.config = config
@@ -54,7 +54,7 @@ class class_buffer_log:
 		if config.debug:
 			print("self.log_filename : ",self.logFileName)
 			print("self.log_filename_save_as : ",self.logFileNameSaveAs)
-			print("self.local_www_log_filename : ",self.localWwwLogFileName)
+		print("self.local_www_log_filename : ",self.localWwwLogFileName)
 
 	def logToFile(self,log_values):
 		here = 	"log_cpu_data_to_file"
