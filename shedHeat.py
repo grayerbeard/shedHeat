@@ -57,11 +57,12 @@ from config import class_config
 config = class_config("config.cfg")
 dHp = config.deviceNumberHp
 dHtrs = config.deviceNumberHeaters
-dTempTH = []
-dTempTH.append(config.deviceNumberTemp1)
-dTempTH.append(config.deviceNumberTemp2)
-dTempTH.append(config.deviceNumberTemp3)
-dTempTH.append(config.deviceNumberTemp4)
+dCircFan = config.deviceNumberCircFan
+#dTempTH = []
+#dTempTH.append(config.deviceNumberTemp1)
+#dTempTH.append(config.deviceNumberTemp2)
+#dTempTH.append(config.deviceNumberTemp3)
+#dTempTH.append(config.deviceNumberTemp4)
 
 debug = config.debug
 
@@ -112,10 +113,7 @@ if config.doTest:
 		print ("amend command failed 95")
 		sys_exit()
 	
-	stSuccess,failReason,devicesStatus,excRep = cloud.getStatus()
-	if len(excRep) > 0:
-		print(excRep)
-		reason += str(excRep[0])
+	stSuccess,failReason,devicesStatus = cloud.getStatus()
 
 	if stSuccess:
 		print( "\n\n","Status at after switch on : ",json.dumps(cloud.devicesStatus), "\n\n")
@@ -125,8 +123,8 @@ if config.doTest:
 	print("Heaters should be on for ten Seconds")
 	print("Heater: ",cloud.devicesStatus[dHtrs]["switch_1"])
 
-	timeSleep(2)
-	
+	timeSleep(5)
+
 	if cloud.amendCommands(dHtrs,"switch_1",'False'): # Check if worked
 
 		success,stSuccess,failReason = cloud.upDateDevice(dHtrs)
@@ -140,10 +138,8 @@ if config.doTest:
 		sys_exit()
 
 
-	stSuccess,failReason,devicesStatus,excRep = cloud.getStatus()
-	if len(excRep) > 0:
-		print(excRep)
-		reason += str(excRep[0])
+	stSuccess,failReason,devicesStatus = cloud.getStatus()
+
 	if stSuccess:
 		print( "\n\n","AfterdHtr Switch Off : ",json.dumps(cloud.devicesStatus), "\n\n")
 	else:
@@ -153,6 +149,57 @@ if config.doTest:
 
 	#sys_exit()
 
+# Check SwitchOperation Circ Fan Switch
+#print( "\n\n","Status at start : ",json.dumps(cloud.devicesStatus[dHtrs]), "\n\n")
+
+if config.doTest:
+	print(json.dumps(cloud.devicesStatus,indent = 4))
+	print("Circ Fan: ",cloud.devicesStatus[dCircFan]["switch_1"])
+	if cloud.amendCommands(dCircFan,"switch_1",'True'): # Check if worked
+		success,stSuccess,failReason = cloud.upDateDevice(dCircFan)
+		if success:
+			print("Circ Fan should be on for five seconds")
+		else:
+			print( success,stSuccess,failReason)
+	else: # Print failed and stop
+		print ("amend command failed 95")
+		sys_exit()
+	
+	stSuccess,failReason,devicesStatus = cloud.getStatus()
+
+	if stSuccess:
+		print( "\n\n","Status at after switch on : ",json.dumps(cloud.devicesStatus), "\n\n")
+	else:
+		print(stSuccess,reason)
+
+	print("Circ Fan should be on for ten Seconds")
+	print("Circ Fan: ",cloud.devicesStatus[dCircFan]["switch_1"])
+
+	timeSleep(5)
+
+	if cloud.amendCommands(dCircFan,"switch_1",'False'): # Check if worked
+
+		success,stSuccess,failReason = cloud.upDateDevice(dCircFan)
+		#print( success,stSuccess,failReason)
+		if success:
+			print("Now Circ Fan should be off")
+		else:
+			print( success,stSuccess,failReason)
+	else: # Print failed and stop
+		print ("amend command failed 101")
+		sys_exit()
+
+
+	stSuccess,failReason,devicesStatus = cloud.getStatus()
+
+	if stSuccess:
+		print( "\n\n","AfterdHtr Switch Off : ",json.dumps(cloud.devicesStatus), "\n\n")
+	else:
+		print(stSuccess,failReason)
+
+	print("Circ Fan: ",cloud.devicesStatus[dCircFan]["switch_1"])
+
+	#sys_exit()
 	
 	# Check operation of Heat Pump Switch
 	
@@ -166,10 +213,8 @@ if config.doTest:
 		print ("amend command failed 113")
 		sys_exit()
 
-	stSuccess,failReason,devicesStatus,excRep = cloud.getStatus()
-	if len(excRep) > 0:
-		print(excRep)
-		reason += str(excRep[0])
+	stSuccess,failReason,devicesStatus = cloud.getStatus()
+
 	if stSuccess:
 		print( "\n\n","After dHp Switch On : ",json.dumps(cloud.devicesStatus), "\n\n")
 	else:
@@ -189,10 +234,8 @@ if config.doTest:
 		print ("amend command failed 113")
 		sys_exit()
 
-	stSuccess,failReason,devicesStatus,excRep = cloud.getStatus()
-	if len(excRep) > 0:
-		print(excRep)
-		reason += str(excRep[0])
+	stSuccess,failReason,devicesStatus = cloud.getStatus()
+
 	if stSuccess:
 		print( "\n\n","After dHp Switch Off : ",json.dumps(cloud.devicesStatus), "\n\n")
 	else:
@@ -229,8 +272,10 @@ sensor.errorCount = 0 # NOT being set at the moment
 message = ""
 reason = ""
 tempFailCount = 0
+circFanRequired  = False
 
 while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
+
 	try:
 		# Sort out Time in Day and Day in week etc
 		logTime= datetime.now()
@@ -262,7 +307,7 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 			print(excRep)
 		if debug:
 			print("temperatures :",temperatures)
-		stSuccess,failReason,devicesStatus,excRep = cloud.getStatus()
+		stSuccess,failReason,devicesStatus = cloud.getStatus()
 		if len(excRep) > 0:
 			print("excRep: ",excRep)
 			reason += str(excRep[0])
@@ -275,17 +320,51 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 		tempTH = []
 		humidityTH = []
 		batteryTH = []
-		for indTH in range(0,len(dTempTH)):
-			if stSuccess[dTempTH[indTH]]:
-				tempTH.append(devicesStatus[dTempTH[indTH]]["va_temperature"]/10)
-				humidityTH.append(devicesStatus[dTempTH[indTH]]["va_humidity"])
-				batteryTH.append(devicesStatus[dTempTH[indTH]]["battery_state"])
-				if debug:
-					print(indTH,dTempTH[indTH],tempTH[indTH],humidityTH[indTH],batteryTH[indTH])
-			else:
-				tempTH.append(-99)
-				humidityTH.append(-99)
-				batteryTH.append(-99)
+		#for indTH in range(0,len(dTempTH)):
+		if stSuccess[config.deviceNumberTemp1]:
+			tempTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp1][0]]/10)
+			humidityTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp1][1]])
+			batteryTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp1][2]])
+			if debug:
+				print(indTH,dTempTH[indTH],tempTH[indTH],humidityTH[indTH],batteryTH[indTH])
+		else:
+			tempTH.append(-99)
+			humidityTH.append(-99)
+			batteryTH.append(-99)
+
+		if stSuccess[config.deviceNumberTemp2]:
+			tempTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp2][0]]/10)
+			humidityTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp2][1]])
+			batteryTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp2][2]])
+			if debug:
+				print(indTH,dTempTH[indTH],tempTH[indTH],humidityTH[indTH],batteryTH[indTH])
+		else:
+			tempTH.append(-99)
+			humidityTH.append(-99)
+			batteryTH.append(-99)
+
+		if stSuccess[config.deviceNumberTemp3]:
+			tempTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp3][0]]/10)
+			humidityTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp3][1]])
+			batteryTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp3][2]])
+			if debug:
+				print(indTH,dTempTH[indTH],tempTH[indTH],humidityTH[indTH],batteryTH[indTH])
+		else:
+			tempTH.append(-99)
+			humidityTH.append(-99)
+			batteryTH.append(-99)
+
+		if stSuccess[config.deviceNumberTemp4]:
+			tempTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp4][0]]/10)
+			humidityTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp4][1]])
+			batteryTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp4][2]])
+			if debug:
+				print(indTH,dTempTH[indTH],tempTH[indTH],humidityTH[indTH],batteryTH[indTH])
+		else:
+			tempTH.append(-99)
+			humidityTH.append(-99)
+			batteryTH.append(-99)
+
 		#print(tempTH,humidityTH,batteryTH)
 		batteries = ""
 		for battery in batteryTH:
@@ -371,8 +450,8 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 				else:
 					print("amend command fault")
 			else:
-				print("Heater Status: ",cloud.devicesStatus[dHtrs]["switch_1"])
-				print("Heaters predictedTemp and targetHeaters heater Off? : ",predictedTemp,targetHeaters)
+				#print("Heater Status: ",cloud.devicesStatus[dHtrs]["switch_1"])
+				#print("Heaters predictedTemp and targetHeaters heater Off? : ",predictedTemp,targetHeaters)
 				if not cloud.devicesStatus[dHtrs]["switch_1"]  : # This is a change from OFF to ON
 					#print("Temp < Target so turn heaters ON")
 					heatersTurnOnTime = logTime
@@ -393,6 +472,8 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 
 			if predictedTemp >= targetHp:
 
+				circFanRequired = False
+
 				if cloud.devicesStatus[dHp]["switch"] : # This is a change from ON to OFF
 					hpTurnOffTime = logTime
 					hpOnTime = (hpTurnOffTime - hpTurnOnTime).total_seconds() / 60.0
@@ -410,7 +491,11 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 						print("Reason : ",reason)
 				else:
 					print("amend command fault")
+
 			else:
+
+				circFanRequired = True
+
 				if not cloud.devicesStatus[dHp]["switch"] : # This is a change from OFF to ON
 					#print("Temp < Target so turn hp ON")
 					hpTurnOnTime = logTime
@@ -421,12 +506,40 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 					message += "htrs on after " + str(round(hpOffTime,2))
 				if cloud.amendCommands(dHp,"switch",'True'):
 					success,stSuccess,failReason = cloud.upDateDevice(dHp)
+					print("Tried to put Circ Fan off")
 					if not(success and stSuccess):
 						saveThis = True
 						reason += failReason  + " ##9 "
 						print("Reason: ",reason)
 				else:
 					print("amend command fault")
+
+			# Circ Fan Control
+			if circFanRequired:
+				#print("Circ Fan needs to be on")
+				if not(cloud.devicesStatus[dCircFan]["switch_1"]):
+					if cloud.amendCommands(dCircFan,"switch_1",'True'):
+						success,stSuccess,failReason = cloud.upDateDevice(dCircFan)
+						if not(success and stSuccess):
+							saveThis = True
+							reason += failReason + " Circ Fan On Error"
+							print("Reason: ",reason)
+					if cloud.devicesStatus[dCircFan]["switch_1"]:
+						print("Success Circ Fan is now on")
+			else:
+				#print("Circ Fan needs to be off")
+				if cloud.devicesStatus[dCircFan]["switch_1"]:
+					if cloud.amendCommands(dCircFan,"switch_1",'False'):
+						success,stSuccess,failReason = cloud.upDateDevice(dCircFan)
+						if not(success and stSuccess):
+							saveThis = True
+							reason += failReason + " Circ Fan Off Error"
+							print("Reason: ",reason)
+					if not(cloud.devicesStatus[dCircFan]["switch_1"]):
+						print("Success Circ Fan is now off")
+					else:
+						print("Failure turning Circ fan off")
+			# End of Circ Fan Control
 
 #Time, Hour in Day,Room Temp,Battery,Per 10 Mins,Predicted Temp,Heaters Target Temp,HP Target Temp,
 # HP In,HP Out,Lower Work,High Clock,Outside,Heaters Status,HP Status,Total Heaters,Total HP,Reason,Message
@@ -458,6 +571,10 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 			logBuffer.lineValues["HP Status"] = "ON"
 		else:
 			logBuffer.lineValues["HP Status"] = "OFF"
+		if circFanRequired:
+			logBuffer.lineValues["Fan"] = "ON"
+		else:
+			logBuffer.lineValues["Fan"] = "OFF"
 		#print("Heaters status :",logBuffer.lineValues["HP Status"],"\n",cloud.devicesStatus[dHp],"\n")
 		logBuffer.lineValues["Total Heaters"] = round(totalHeatersOnTime,2)
 		logBuffer.lineValues["Total HP"] = round(totalHpOnTime,2)
