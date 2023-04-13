@@ -317,63 +317,63 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 			reason += deviceFailReason
 			if len(deviceFailReason) > 1:
 				saveThis = True
-		#tempTH = []
-		#humidityTH = []
-		#batteryTH = []
+		tempTH = []
+		humidityTH = []
+		batteryTH = []
 		#for indTH in range(0,len(dTempTH)):
-		#if stSuccess[config.deviceNumberTemp1]:
-		#	tempTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp1][0]]/10)
-		#	humidityTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp1][1]])
-		#	batteryTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp1][2]])
-		#	if debug:
-		#		print(indTH,dTempTH[indTH],tempTH[indTH],humidityTH[indTH],batteryTH[indTH])
-		#else:
-		#	tempTH.append(-99)
-		#	humidityTH.append(-99)
-		#	batteryTH.append(-99)
+		if stSuccess[config.deviceNumberTemp1]:
+			tempTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp1][0]]/10)
+			humidityTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp1][1]])
+			batteryTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp1][2]])
+			if debug:
+				print(indTH,dTempTH[indTH],tempTH[indTH],humidityTH[indTH],batteryTH[indTH])
+		else:
+			tempTH.append(-99)
+			humidityTH.append(-99)
+			batteryTH.append(-99)
 
-		#if stSuccess[config.deviceNumberTemp2]:
-		#	tempTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp2][0]]/10)
-		#	humidityTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp2][1]])
-		#	batteryTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp2][2]])
-		#	if debug:
-		#		print(indTH,dTempTH[indTH],tempTH[indTH],humidityTH[indTH],batteryTH[indTH])
-		#else:
-		#	tempTH.append(-99)
-		#	humidityTH.append(-99)
-		#	batteryTH.append(-99)
+		if stSuccess[config.deviceNumberTemp2]:
+			tempTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp2][0]]/10)
+			humidityTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp2][1]])
+			batteryTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp2][2]])
+			if debug:
+				print(indTH,dTempTH[indTH],tempTH[indTH],humidityTH[indTH],batteryTH[indTH])
+		else:
+			tempTH.append(-99)
+			humidityTH.append(-99)
+			batteryTH.append(-99)
 
-		#if stSuccess[config.deviceNumberTemp3]:
-		#	tempTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp3][0]]/10)
-		#	humidityTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp3][1]])
-		#	batteryTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp3][2]])
-		#	if debug:
-		#		print(indTH,dTempTH[indTH],tempTH[indTH],humidityTH[indTH],batteryTH[indTH])
-		#else:
-		#	tempTH.append(-99)
-		##	humidityTH.append(-99)
-		#	batteryTH.append(-99)
+		if stSuccess[config.deviceNumberTemp3]:
+			tempTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp3][0]]/10)
+			humidityTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp3][1]])
+			batteryTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp3][2]])
+			if debug:
+				print(indTH,dTempTH[indTH],tempTH[indTH],humidityTH[indTH],batteryTH[indTH])
+		else:
+			tempTH.append(-99)
+			humidityTH.append(-99)
+			batteryTH.append(-99)
 
-		#if stSuccess[config.deviceNumberTemp4]:
-		#	tempTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp4][0]]/10)
-		#	humidityTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp4][1]])
-		#	batteryTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp4][2]])
-		#	if debug:
-		#		print(indTH,dTempTH[indTH],tempTH[indTH],humidityTH[indTH],batteryTH[indTH])
-		#else:
-		#	tempTH.append(-99)
-		#	humidityTH.append(-99)
-		#	batteryTH.append(-99)
+		if stSuccess[config.deviceNumberTemp4]:
+			tempTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp4][0]]/10)
+			humidityTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp4][1]])
+			batteryTH.append(devicesStatus[config.deviceNumberTemp1][cloud.codes[config.deviceNumberTemp4][2]])
+			if debug:
+				print(indTH,dTempTH[indTH],tempTH[indTH],humidityTH[indTH],batteryTH[indTH])
+		else:
+			tempTH.append(-99)
+			humidityTH.append(-99)
+			batteryTH.append(-99)
 
 		#print(tempTH,humidityTH,batteryTH)
-		#batteries = ""
-		#for battery in batteryTH:
-		#	if type(battery)  != type("cat"):
-		#		batteries += " " + str(battery) + "TYPE ERROR"
-		#	else:
-		#		batteries += " " + battery 
+		batteries = ""
+		for battery in batteryTH:
+			if type(battery)  != type("cat"):
+				batteries += " " + str(battery) + "TYPE ERROR"
+			else:
+				batteries += " " + battery 
 
-		#otherTemp = tempTH
+		otherTemp = tempTH
 
 		if len(temperatures) > config.sensorRoomTemp:
 			temp = temperatures[config.sensorRoomTemp]
@@ -384,7 +384,7 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 		if config.scan_count < 2:
 			lastTemp = temp
 
-  
+
 		if type(temp) != type(1.1):
 			temp = -1
 			print("Temperature reading not a float")
@@ -548,15 +548,15 @@ while (config.scan_count <= config.maxScans) or (config.maxScans == 0):
 		logBuffer.lineValues["Time"] =makeTimeText(logTime)
 		logBuffer.lineValues["Hour in Day"] =  round(hourInDay,2)
 		logBuffer.lineValues["Room Temp"] = round(temperatures[config.sensorRoomTemp],2)
-		#logBuffer.lineValues["Battery"] = batteries
+		logBuffer.lineValues["Battery"] = batteries
 		logBuffer.lineValues["Per 10 Mins"] = round(changeRate*10*60/config.scanDelay,2)
 		logBuffer.lineValues["Predicted Temp"] = round(predictedTemp,2)
 		logBuffer.lineValues["Heaters Target Temp"] = round(targetHeaters,2)
 		logBuffer.lineValues["HP Target Temp"] = round(targetHp,2)
-		#logBuffer.lineValues["HP In"] =  round(tempTH[2],2)
-		#logBuffer.lineValues["HP Out"] = round(tempTH[3],2)
-		#logBuffer.lineValues["Lower Work"] = round(tempTH[0],2)
-		#logBuffer.lineValues["High Clock"] = round(tempTH[1],2)
+		logBuffer.lineValues["HP In"] =  round(tempTH[2],2)
+		logBuffer.lineValues["HP Out"] = round(tempTH[3],2)
+		logBuffer.lineValues["Lower Work"] = round(tempTH[0],2)
+		logBuffer.lineValues["High Clock"] = round(tempTH[1],2)
 		if len(temperatures) > config.sensorOutside:
 			logBuffer.lineValues["Outside"] = round(temperatures[config.sensorOutside],2)
 		else:
